@@ -111,6 +111,7 @@ export const useChatStore = defineStore('chat', () => {
 
     EventsOn('chat:done', (msg) => {
       isStreaming.value = false
+      agentStatus.value = ''
       streamingContent.value = ''
       streamingThinking.value = ''
       streamingToolCalls.value = []
@@ -121,6 +122,7 @@ export const useChatStore = defineStore('chat', () => {
 
     EventsOn('chat:error', (err) => {
       isStreaming.value = false
+      agentStatus.value = ''
       streamingContent.value = ''
       streamingThinking.value = ''
       streamingAnnotations.value = []
