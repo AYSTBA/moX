@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -99,7 +100,17 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 			prompt = prompt + timeInfo
 		}
 		if settings.ExternalSearchEnabled {
-			prompt = prompt + "\n\n[Skill: 联网搜索] 你可以通过联网搜索获取实时信息。当用户提问涉及最新资讯、实时数据、当前事件等问题时，系统会自动为你搜索并将结果以 <search_results> 标签传入。请直接基于搜索结果回答，不要说「我无法访问互联网」或「我的知识有截止日期」。如果没有收到搜索结果，则使用你自身的知识回答。"
+			prompt = prompt + `
+
+[Skill: 联网搜索]
+你拥有联网搜索能力。工作方式：
+1. 用户的消息发送前，系统会自动调用搜索API获取相关网页内容
+2. 搜索结果会以 <search_results> 标签传入，包含标题、URL和网页摘要
+3. 你必须基于搜索结果中的实际内容来回答，直接引用其中的信息
+4. 如果搜索结果包含了用户要找的信息，直接使用，不要说「搜索未返回结果」或「我无法访问」
+5. 如果搜索结果确实不包含所需信息，如实告知用户搜索到了什么，而不是说没有结果
+6. 遇到URL、仓库、文档链接等，搜索结果通常会包含该页面的内容摘要，直接读取并使用
+7. 不要在回答中提及「搜索功能」「系统搜索」等实现细节，自然地回答即可`
 		}
 		apiMessages = append(apiMessages, ChatMessage{
 			Role:    "system",
@@ -108,14 +119,20 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 	}
 
 	if settings.ExternalSearchEnabled && settings.ExternalSearchAPIKey != "" && userContent != "" {
-		results, err := ExternalSearch(a.ctx, settings.ExternalSearchAPIKey, userContent)
+		searchQuery := userContent
+		urlRegex := regexp.MustCompile(`https?://[^\s]+`)
+		if urls := urlRegex.FindAllString(userContent, -1); len(urls) > 0 {
+			searchQuery = urls[0]
+		}
+
+		results, err := ExternalSearch(a.ctx, settings.ExternalSearchAPIKey, searchQuery)
 		if err != nil {
 			runtime.EventsEmit(a.ctx, "chat:toast", "搜索失败: "+err.Error())
 		} else if len(results) > 0 {
 			var sb strings.Builder
 			sb.WriteString("<search_results>\n")
 			for i, r := range results {
-				sb.WriteString(fmt.Sprintf("[%d] %s | %s\n%s\n\n", i+1, r.Title, r.URL, r.Content))
+				sb.WriteString(fmt.Sprintf("[%d] %s\nURL: %s\n内容: %s\n\n", i+1, r.Title, r.URL, r.Content))
 			}
 			sb.WriteString("</search_results>")
 			apiMessages = append(apiMessages, ChatMessage{
