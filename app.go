@@ -92,7 +92,9 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 	effectiveContent := userContent
 	if settings.ExternalSearchEnabled && settings.ExternalSearchAPIKey != "" && userContent != "" {
 		results, err := ExternalSearch(a.ctx, settings.ExternalSearchAPIKey, userContent)
-		if err == nil && len(results) > 0 {
+		if err != nil {
+			runtime.EventsEmit(a.ctx, "chat:toast", "Tavily 搜索失败: "+err.Error())
+		} else if len(results) > 0 {
 			var sb strings.Builder
 			sb.WriteString("[联网搜索结果]\n")
 			for i, r := range results {

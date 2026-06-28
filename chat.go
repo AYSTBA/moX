@@ -250,7 +250,6 @@ type TavilyResponse struct {
 
 func ExternalSearch(ctx context.Context, apiKey string, query string) ([]TavilyResult, error) {
 	body, _ := json.Marshal(map[string]interface{}{
-		"api_key":       apiKey,
 		"query":         query,
 		"search_depth":  "basic",
 		"max_results":   5,
@@ -262,21 +261,22 @@ func ExternalSearch(ctx context.Context, apiKey string, query string) ([]TavilyR
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
 
 	resp, err := (&http.Client{Timeout: 15 * time.Second}).Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("tavily 连接失败: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		errBody, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("tavily error %d: %s", resp.StatusCode, string(errBody))
+		return nil, fmt.Errorf("tavily 错误 %d: %s", resp.StatusCode, string(errBody))
 	}
 
 	var result TavilyResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("tavily 解析失败: %v", err)
 	}
 	return result.Results, nil
 }

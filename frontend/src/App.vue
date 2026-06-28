@@ -22,6 +22,11 @@ onMounted(async () => {
     <Sidebar />
     <ChatView />
     <Settings v-if="settings.showSettings" />
+    <transition name="toast">
+      <div v-if="chat.showToast" class="toast">
+        {{ chat.toastMessage }}
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -83,5 +88,35 @@ html, body, #app {
   --thinking-bg: #f5f5f5;
   --code-bg: #f6f6f6;
   --scrollbar-thumb: #cccccc;
+}
+
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  background: #333;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 13px;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  max-width: 500px;
+  text-align: center;
+}
+
+.light .toast {
+  background: #222;
+  color: #fff;
+}
+
+.toast-enter-active, .toast-leave-active {
+  transition: all 0.3s ease;
+}
+
+.toast-enter-from, .toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
 }
 </style>

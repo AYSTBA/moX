@@ -20,6 +20,8 @@ export const useChatStore = defineStore('chat', () => {
   const streamingToolCalls = ref([])
   const streamingAnnotations = ref([])
   const models = ref([])
+  const toastMessage = ref('')
+  const showToast = ref(false)
 
   const activeSession = computed(() =>
     sessions.value.find(s => s.key === activeSessionKey.value)
@@ -136,6 +138,12 @@ export const useChatStore = defineStore('chat', () => {
       const s = sessions.value.find(s => s.key === key)
       if (s) s.label = label
     })
+
+    EventsOn('chat:toast', (msg) => {
+      toastMessage.value = msg
+      showToast.value = true
+      setTimeout(() => { showToast.value = false }, 4000)
+    })
   }
 
   return {
@@ -148,6 +156,8 @@ export const useChatStore = defineStore('chat', () => {
     streamingToolCalls,
     streamingAnnotations,
     models,
+    toastMessage,
+    showToast,
     loadSessions,
     loadModels,
     newSession,
