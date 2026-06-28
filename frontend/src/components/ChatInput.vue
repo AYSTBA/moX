@@ -173,7 +173,6 @@ function getFileIcon(type) {
 <style scoped>
 .chat-input-area {
   padding: 16px 20px;
-  border-top: 1px solid var(--border-color);
   background: var(--bg-primary);
 }
 

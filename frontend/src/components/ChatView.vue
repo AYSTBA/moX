@@ -105,7 +105,6 @@ function handleSend(content, attachments) {
   align-items: center;
   justify-content: space-between;
   padding: 12px 20px;
-  border-bottom: 1px solid var(--border-color);
   background: var(--bg-primary);
 }
 
