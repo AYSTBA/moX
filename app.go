@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
 
@@ -91,7 +90,7 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 	runtime.EventsEmit(a.ctx, "chat:userMessage", userMsg)
 
 	apiMessages := make([]ChatMessage, 0)
-	if settings.SystemPrompt != "" || settings.TimeAwareness || settings.ExternalSearchEnabled {
+	if settings.SystemPrompt != "" || settings.TimeAwareness {
 		prompt := settings.SystemPrompt
 		if settings.TimeAwareness {
 			now := time.Now()
@@ -99,47 +98,10 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 			timeInfo := fmt.Sprintf("\n当前时间：%s 星期%s %02d:%02d", now.Format("2006年01月02日"), weekdays[now.Weekday()], now.Hour(), now.Minute())
 			prompt = prompt + timeInfo
 		}
-		if settings.ExternalSearchEnabled {
-			prompt = prompt + `
-
-[Skill: 联网搜索]
-你拥有联网搜索能力。工作方式：
-1. 用户的消息发送前，系统会自动调用搜索API获取相关网页内容
-2. 搜索结果会以 <search_results> 标签传入，包含标题、URL和网页摘要
-3. 你必须基于搜索结果中的实际内容来回答，直接引用其中的信息
-4. 如果搜索结果包含了用户要找的信息，直接使用，不要说「搜索未返回结果」或「我无法访问」
-5. 如果搜索结果确实不包含所需信息，如实告知用户搜索到了什么，而不是说没有结果
-6. 遇到URL、仓库、文档链接等，搜索结果通常会包含该页面的内容摘要，直接读取并使用
-7. 不要在回答中提及「搜索功能」「系统搜索」等实现细节，自然地回答即可`
-		}
 		apiMessages = append(apiMessages, ChatMessage{
 			Role:    "system",
 			Content: prompt,
 		})
-	}
-
-	if settings.ExternalSearchEnabled && settings.ExternalSearchAPIKey != "" && userContent != "" {
-		searchQuery := userContent
-		urlRegex := regexp.MustCompile(`https?://[^\s]+`)
-		if urls := urlRegex.FindAllString(userContent, -1); len(urls) > 0 {
-			searchQuery = urls[0]
-		}
-
-		results, err := ExternalSearch(a.ctx, settings.ExternalSearchAPIKey, searchQuery)
-		if err != nil {
-			runtime.EventsEmit(a.ctx, "chat:toast", "搜索失败: "+err.Error())
-		} else if len(results) > 0 {
-			var sb strings.Builder
-			sb.WriteString("<search_results>\n")
-			for i, r := range results {
-				sb.WriteString(fmt.Sprintf("[%d] %s\nURL: %s\n内容: %s\n\n", i+1, r.Title, r.URL, r.Content))
-			}
-			sb.WriteString("</search_results>")
-			apiMessages = append(apiMessages, ChatMessage{
-				Role:    "system",
-				Content: sb.String(),
-			})
-		}
 	}
 
 	for _, m := range session.Messages {
@@ -154,6 +116,89 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 			cm.ToolCalls = m.ToolCalls
 		}
 		apiMessages = append(apiMessages, cm)
+	}
+
+	ctx, cancel := context.WithCancel(a.ctx)
+	a.cancelFunc = cancel
+
+	if settings.ExternalSearchEnabled && settings.ExternalSearchAPIKey != "" {
+		a.agentLoop(ctx, apiKey, model, thinking, settings, apiMessages, session)
+	} else {
+		a.directChat(ctx, apiKey, model, thinking, settings, apiMessages, session, nil)
+	}
+}
+
+func (a *App) agentLoop(ctx context.Context, apiKey, model string, thinking bool, settings *Settings, history []ChatMessage, session *Session) {
+	planPrompt := append([]ChatMessage{}, history...)
+	planPrompt = append(planPrompt, ChatMessage{
+		Role:    "user",
+		Content: history[len(history)-1].Content,
+	})
+	planPrompt = append(planPrompt, ChatMessage{
+		Role:    "system",
+		Content: `[Agent 规则]
+你是一个智能助手。在回答前，请先判断：
+1. 如果用户的问题需要最新信息（新闻、实时数据、特定URL内容、当前事件、价格等），输出 [SEARCH: 搜索关键词]
+2. 如果问题复杂需要深入推理，输出 [THINK]
+3. 如果可以直接回答，直接输出答案
+
+只输出一个标签或直接回答，不要解释你的判断过程。`,
+	})
+
+	planReq := ChatRequest{
+		Model:              model,
+		Messages:           planPrompt,
+		Stream:             false,
+		MaxCompletionTokens: 100,
+		Temperature:        0.1,
+	}
+
+	planResp, err := SendChatMessageSync(ctx, apiKey, planReq)
+	if err != nil {
+		runtime.EventsEmit(a.ctx, "chat:error", "Agent 规划失败: "+err.Error())
+		return
+	}
+
+	planText := strings.TrimSpace(planResp)
+
+	var searchQuery string
+	needThink := false
+
+	if strings.HasPrefix(planText, "[SEARCH:") {
+		searchQuery = strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(planText, "[SEARCH:"), "]"))
+	} else if strings.HasPrefix(planText, "[THINK]") {
+		needThink = true
+	} else {
+		a.directChat(ctx, apiKey, model, thinking, settings, history, session, nil)
+		return
+	}
+
+	var searchResults []TavilyResult
+	if searchQuery != "" {
+		runtime.EventsEmit(a.ctx, "chat:toast", "正在搜索: "+searchQuery)
+		searchResults, err = ExternalSearch(ctx, apiKey, searchQuery)
+		if err != nil {
+			runtime.EventsEmit(a.ctx, "chat:toast", "搜索失败: "+err.Error())
+		}
+	}
+
+	a.directChat(ctx, apiKey, model, thinking || needThink, settings, history, session, searchResults)
+}
+
+func (a *App) directChat(ctx context.Context, apiKey, model string, thinking bool, settings *Settings, history []ChatMessage, session *Session, searchResults []TavilyResult) {
+	apiMessages := append([]ChatMessage{}, history...)
+
+	if len(searchResults) > 0 {
+		var sb strings.Builder
+		sb.WriteString("<search_results>\n")
+		for i, r := range searchResults {
+			sb.WriteString(fmt.Sprintf("[%d] %s\nURL: %s\n内容: %s\n\n", i+1, r.Title, r.URL, r.Content))
+		}
+		sb.WriteString("</search_results>")
+		apiMessages = append(apiMessages, ChatMessage{
+			Role:    "system",
+			Content: sb.String(),
+		})
 	}
 
 	req := ChatRequest{
@@ -178,9 +223,6 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 			},
 		}
 	}
-
-	ctx, cancel := context.WithCancel(a.ctx)
-	a.cancelFunc = cancel
 
 	events := make(chan StreamEvent, 100)
 
