@@ -29,6 +29,15 @@ frontend/dist/
 # OS
 .DS_Store
 Thumbs.db
+Desktop.ini
 
 # Wails
 frontend/wailsjs/
+
+# Env / Secrets
+.env
+.env.*
+*.local
+
+# Logs
+*.log
