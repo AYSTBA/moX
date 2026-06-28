@@ -1,5 +1,8 @@
 <script setup>
-import {ref, nextTick} from 'vue'
+import {ref, nextTick, computed} from 'vue'
+import {useChatStore} from '../stores/chat'
+
+const chat = useChatStore()
 
 const props = defineProps({
   disabled: Boolean,
@@ -13,6 +16,8 @@ const textareaRef = ref(null)
 const attachments = ref([])
 const showAttachMenu = ref(false)
 const fileInputRef = ref(null)
+
+const isBusy = computed(() => chat.isStreaming || chat.agentStatus !== '')
 
 function handleSend() {
   if (!input.value.trim() && attachments.value.length === 0) return
@@ -134,10 +139,10 @@ function getFileIcon(type) {
 
         <div class="input-actions">
           <button
-            v-if="isStreaming"
+            v-if="isBusy"
             class="btn-stop"
             @click="emit('stop')"
-            title="停止生成"
+            title="停止"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
               <rect x="6" y="6" width="12" height="12" rx="1"/>
@@ -166,6 +171,15 @@ function getFileIcon(type) {
         style="display:none"
         @change="onFileSelected"
       />
+    </div>
+
+    <div v-if="isBusy" class="agent-status">
+      <div class="dots">
+        <span></span><span></span><span></span>
+      </div>
+      <span class="status-text">
+        {{ chat.agentStatus === 'planning' ? '分析中...' : chat.agentStatus === 'searching' ? '搜索中...' : '生成中...' }}
+      </span>
     </div>
   </div>
 </template>
@@ -376,5 +390,39 @@ textarea:disabled {
 @keyframes pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.3); }
   50% { box-shadow: 0 0 0 6px rgba(255,255,255,0); }
+}
+
+.agent-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 0 0;
+}
+
+.dots {
+  display: flex;
+  gap: 4px;
+}
+
+.dots span {
+  width: 5px;
+  height: 5px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  animation: dotBounce 1.4s infinite;
+}
+
+.dots span:nth-child(2) { animation-delay: 0.2s; }
+.dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dotBounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+.status-text {
+  font-size: 12px;
+  color: var(--text-muted);
 }
 </style>

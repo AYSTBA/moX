@@ -129,11 +129,9 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 }
 
 func (a *App) agentLoop(ctx context.Context, apiKey, model string, thinking bool, settings *Settings, history []ChatMessage, session *Session) {
+	runtime.EventsEmit(a.ctx, "chat:status", "planning")
+
 	planPrompt := append([]ChatMessage{}, history...)
-	planPrompt = append(planPrompt, ChatMessage{
-		Role:    "user",
-		Content: history[len(history)-1].Content,
-	})
 	planPrompt = append(planPrompt, ChatMessage{
 		Role:    "system",
 		Content: `[Agent 规则]
@@ -149,23 +147,27 @@ func (a *App) agentLoop(ctx context.Context, apiKey, model string, thinking bool
 		Model:              model,
 		Messages:           planPrompt,
 		Stream:             false,
-		MaxCompletionTokens: 100,
+		MaxCompletionTokens: 50,
 		Temperature:        0.1,
 	}
 
 	planResp, err := SendChatMessageSync(ctx, apiKey, planReq)
 	if err != nil {
+		runtime.EventsEmit(a.ctx, "chat:status", "")
 		runtime.EventsEmit(a.ctx, "chat:error", "Agent 规划失败: "+err.Error())
 		return
 	}
 
 	planText := strings.TrimSpace(planResp)
+	runtime.EventsEmit(a.ctx, "chat:status", "")
 
 	var searchQuery string
 	needThink := false
 
 	if strings.HasPrefix(planText, "[SEARCH:") {
-		searchQuery = strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(planText, "[SEARCH:"), "]"))
+		raw := strings.TrimPrefix(planText, "[SEARCH:")
+		raw = strings.TrimSuffix(raw, "]")
+		searchQuery = strings.TrimSpace(raw)
 	} else if strings.HasPrefix(planText, "[THINK]") {
 		needThink = true
 	} else {
@@ -175,11 +177,13 @@ func (a *App) agentLoop(ctx context.Context, apiKey, model string, thinking bool
 
 	var searchResults []TavilyResult
 	if searchQuery != "" {
+		runtime.EventsEmit(a.ctx, "chat:status", "searching")
 		runtime.EventsEmit(a.ctx, "chat:toast", "正在搜索: "+searchQuery)
 		searchResults, err = ExternalSearch(ctx, apiKey, searchQuery)
 		if err != nil {
 			runtime.EventsEmit(a.ctx, "chat:toast", "搜索失败: "+err.Error())
 		}
+		runtime.EventsEmit(a.ctx, "chat:status", "")
 	}
 
 	a.directChat(ctx, apiKey, model, thinking || needThink, settings, history, session, searchResults)

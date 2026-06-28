@@ -22,6 +22,7 @@ export const useChatStore = defineStore('chat', () => {
   const models = ref([])
   const toastMessage = ref('')
   const showToast = ref(false)
+  const agentStatus = ref('')
 
   const activeSession = computed(() =>
     sessions.value.find(s => s.key === activeSessionKey.value)
@@ -144,6 +145,10 @@ export const useChatStore = defineStore('chat', () => {
       showToast.value = true
       setTimeout(() => { showToast.value = false }, 4000)
     })
+
+    EventsOn('chat:status', (status) => {
+      agentStatus.value = status
+    })
   }
 
   return {
@@ -158,6 +163,7 @@ export const useChatStore = defineStore('chat', () => {
     models,
     toastMessage,
     showToast,
+    agentStatus,
     loadSessions,
     loadModels,
     newSession,
