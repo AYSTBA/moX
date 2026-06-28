@@ -69,7 +69,7 @@ func getSessionsDir() string {
 
 func LoadSettings() *Settings {
 	s := &Settings{
-		Model:       "mimo-v2.5-pro",
+		Model:       "mimo-v2-flash",
 		Theme:       "dark",
 		SystemPrompt: "你是MiMo，是小米公司研发的AI智能助手。",
 		Temperature: 1.0,

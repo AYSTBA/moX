@@ -5,7 +5,7 @@ import {GetSettings, SaveSettings} from '../../wailsjs/go/main/App'
 export const useSettingsStore = defineStore('settings', () => {
   const settings = ref({
     api_key: '',
-    model: 'mimo-v2.5-pro',
+    model: 'mimo-v2-flash',
     theme: 'dark',
     system_prompt: '你是MiMo，是小米公司研发的AI智能助手。',
     temperature: 1.0,
