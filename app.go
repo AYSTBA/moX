@@ -125,21 +125,77 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 	a.cancelFunc = cancel
 
 	if settings.ExternalSearchEnabled && settings.ExternalSearchAPIKey != "" {
-		runtime.EventsEmit(a.ctx, "chat:status", "searching")
-		var searchResults []TavilyResult
-		searchQuery := userContent
-		if searchQuery != "" {
-			var err error
-			searchResults, err = ExternalSearch(ctx, settings.ExternalSearchAPIKey, searchQuery)
-			if err != nil {
-				runtime.EventsEmit(a.ctx, "chat:toast", "搜索失败: "+err.Error())
-			}
-		}
-		runtime.EventsEmit(a.ctx, "chat:status", "")
-		a.directChat(ctx, apiKey, model, thinking, settings, apiMessages, session, searchResults)
+		a.agentLoop(ctx, apiKey, model, thinking, settings, apiMessages, session)
 	} else {
 		a.directChat(ctx, apiKey, model, thinking, settings, apiMessages, session, nil)
 	}
+}
+
+func (a *App) agentLoop(ctx context.Context, apiKey, model string, thinking bool, settings *Settings, history []ChatMessage, session *Session) {
+	runtime.EventsEmit(a.ctx, "chat:status", "planning")
+
+	lastUserMsg := ""
+	for i := len(history) - 1; i >= 0; i-- {
+		if history[i].Role == "user" {
+			if s, ok := history[i].Content.(string); ok {
+				lastUserMsg = s
+			}
+			break
+		}
+	}
+
+	planMessages := []ChatMessage{
+		{Role: "system", Content: `你是规划助手。判断用户问题是否需要联网搜索。
+
+规则：
+- 需要实时信息、最新资讯、特定URL/仓库/文件内容、当前事件 → 输出 SEARCH:关键词
+- 问题复杂需要深入推理 → 输出 THINK
+- 可以直接回答 → 输出 OK
+
+只输出三个字母之一加冒号和关键词，例如：SEARCH:github AYSTBA仓库
+不要解释，不要输出其他任何内容。`},
+		{Role: "user", Content: lastUserMsg},
+	}
+
+	planReq := ChatRequest{
+		Model:              model,
+		Messages:           planMessages,
+		Stream:             false,
+		MaxCompletionTokens: 30,
+		Temperature:        0.1,
+	}
+
+	planResp, err := SendChatMessageSync(ctx, apiKey, planReq)
+	if err != nil {
+		runtime.EventsEmit(a.ctx, "chat:status", "")
+		a.directChat(ctx, apiKey, model, thinking, settings, history, session, nil)
+		return
+	}
+
+	planText := strings.TrimSpace(strings.ToUpper(planResp))
+	runtime.EventsEmit(a.ctx, "chat:toast", "Agent: "+planResp)
+
+	var searchQuery string
+	needThink := false
+
+	if strings.HasPrefix(planText, "SEARCH:") {
+		searchQuery = strings.TrimSpace(strings.TrimPrefix(planResp, "SEARCH:"))
+		searchQuery = strings.TrimSpace(strings.TrimPrefix(searchQuery, "search:"))
+	} else if strings.HasPrefix(planText, "THINK") {
+		needThink = true
+	}
+
+	var searchResults []TavilyResult
+	if searchQuery != "" {
+		runtime.EventsEmit(a.ctx, "chat:status", "searching")
+		searchResults, err = ExternalSearch(ctx, settings.ExternalSearchAPIKey, searchQuery)
+		if err != nil {
+			runtime.EventsEmit(a.ctx, "chat:toast", "搜索失败: "+err.Error())
+		}
+		runtime.EventsEmit(a.ctx, "chat:status", "")
+	}
+
+	a.directChat(ctx, apiKey, model, thinking || needThink, settings, history, session, searchResults)
 }
 
 func (a *App) directChat(ctx context.Context, apiKey, model string, thinking bool, settings *Settings, history []ChatMessage, session *Session, searchResults []TavilyResult) {
