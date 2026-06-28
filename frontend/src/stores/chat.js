@@ -61,16 +61,19 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  function send(content, model, thinking, attachments) {
+  async function send(content, model, thinking, attachments) {
     if ((!content || !content.trim()) && (!attachments || attachments.length === 0)) return
     if (isStreaming.value) return
+
+    if (!activeSessionKey.value || !sessions.value.find(s => s.key === activeSessionKey.value)) {
+      await newSession()
+    }
 
     isStreaming.value = true
     streamingContent.value = ''
     streamingThinking.value = ''
     streamingToolCalls.value = []
 
-    const attList = attachments ? attachments.map(a => ({name: a.name, size: a.size, type: a.type})) : []
     SendMessage(activeSessionKey.value, content || '', model, thinking)
   }
 

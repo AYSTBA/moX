@@ -43,10 +43,16 @@ function handleSend(content, attachments) {
     <div class="chat-header">
       <ModelSelector v-model="selectedModel" :models="chat.models" />
       <div class="header-actions">
-        <label class="thinking-toggle" title="深度思考">
-          <input type="checkbox" v-model="settings.settings.thinking_enabled" @change="settings.save()" />
-          <span>思考</span>
-        </label>
+        <div class="toggle-group" title="深度思考">
+          <span class="toggle-label">思考</span>
+          <button
+            class="toggle-switch"
+            :class="{on: settings.settings.thinking_enabled}"
+            @click="settings.settings.thinking_enabled = !settings.settings.thinking_enabled; settings.save()"
+          >
+            <span class="toggle-knob"></span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -114,18 +120,48 @@ function handleSend(content, attachments) {
   gap: 12px;
 }
 
-.thinking-toggle {
+.toggle-group {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  user-select: none;
+  gap: 8px;
 }
 
-.thinking-toggle input {
-  accent-color: var(--accent);
+.toggle-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.toggle-switch {
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.25s ease;
+  padding: 0;
+}
+
+.toggle-switch.on {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+}
+
+.toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: all 0.25s ease;
+}
+
+.toggle-switch.on .toggle-knob {
+  left: 20px;
+  background: var(--bg-primary);
 }
 
 .messages-area {
