@@ -157,3 +157,59 @@ func SendChatMessage(ctx context.Context, apiKey string, req ChatRequest, events
 	events <- StreamEvent{Type: "done"}
 	return nil
 }
+
+func GenerateTitle(ctx context.Context, apiKey string, messages []ChatMessage) (string, error) {
+	trimmed := messages
+	if len(trimmed) > 6 {
+		trimmed = trimmed[len(trimmed)-6:]
+	}
+
+	prompt := []ChatMessage{
+		{Role: "system", Content: "根据以下对话内容，生成一个简短的中文标题（不超过15个字）。只输出标题，不要任何解释、引号或标点。"},
+	}
+	prompt = append(prompt, trimmed...)
+
+	body, _ := json.Marshal(ChatRequest{
+		Model:              "mimo-v2-flash",
+		Messages:           prompt,
+		Stream:             false,
+		MaxCompletionTokens: 50,
+		Temperature:        0.3,
+	})
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", apiBase+"/chat/completions", bytes.NewReader(body))
+	if err != nil {
+		return "", err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Authorization", "Bearer "+apiKey)
+
+	resp, err := (&http.Client{}).Do(httpReq)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		errBody, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("title API error %d: %s", resp.StatusCode, string(errBody))
+	}
+
+	var result struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", err
+	}
+	if len(result.Choices) == 0 {
+		return "", fmt.Errorf("no choices returned")
+	}
+
+	title := strings.TrimSpace(result.Choices[0].Message.Content)
+	title = strings.Trim(title, "\"'")
+	return title, nil
+}

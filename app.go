@@ -162,6 +162,10 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 			session.Messages = append(session.Messages, assistantMsg)
 			SaveSession(session)
 			runtime.EventsEmit(a.ctx, "chat:done", assistantMsg)
+
+			if len(session.Messages) >= 4 && session.Label == "新对话" {
+				go a.generateTitle(apiKey, session)
+			}
 		case "error":
 			runtime.EventsEmit(a.ctx, "chat:error", event.Error)
 		}
@@ -183,6 +187,28 @@ func (a *App) GetModels() []map[string]string {
 		{"id": "mimo-v2-flash", "name": "MiMo-V2 Flash", "desc": "快速响应，低成本"},
 		{"id": "mimo-v2-omni", "name": "MiMo-V2 Omni", "desc": "多模态理解"},
 	}
+}
+
+func (a *App) generateTitle(apiKey string, session *Session) {
+	apiMessages := make([]ChatMessage, 0, len(session.Messages))
+	for _, m := range session.Messages {
+		apiMessages = append(apiMessages, ChatMessage{
+			Role:    m.Role,
+			Content: m.Content,
+		})
+	}
+
+	title, err := GenerateTitle(a.ctx, apiKey, apiMessages)
+	if err != nil || title == "" {
+		return
+	}
+
+	session.Label = title
+	SaveSession(session)
+	runtime.EventsEmit(a.ctx, "chat:titleUpdated", map[string]string{
+		"key":   session.Key,
+		"label": title,
+	})
 }
 
 func (a *App) TestAPIKey(apiKey string) string {

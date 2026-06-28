@@ -123,6 +123,11 @@ export const useChatStore = defineStore('chat', () => {
         })
       }
     })
+
+    EventsOn('chat:titleUpdated', ({key, label}) => {
+      const s = sessions.value.find(s => s.key === key)
+      if (s) s.label = label
+    })
   }
 
   return {
