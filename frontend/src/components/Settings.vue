@@ -80,25 +80,43 @@ function close() {
         </div>
 
         <div class="setting-group">
-          <label>外部搜索 API (Tavily)</label>
-          <div class="api-key-row">
-            <input
-              type="password"
-              v-model="settings.settings.external_search_api_key"
-              placeholder="Tavily API Key (可选)"
-              class="input"
-            />
-            <button
-              class="toggle-switch"
-              :class="{on: settings.settings.external_search_enabled}"
-              @click="settings.settings.external_search_enabled = !settings.settings.external_search_enabled"
-            >
-              <span class="toggle-knob"></span>
-            </button>
+          <label>联网搜索</label>
+          <div class="search-options">
+            <div class="search-option">
+              <div class="search-option-header">
+                <span class="search-option-name">MiMo 内置搜索</span>
+                <button
+                  class="toggle-switch"
+                  :class="{on: settings.settings.web_search_enabled}"
+                  @click="settings.settings.web_search_enabled = !settings.settings.web_search_enabled"
+                >
+                  <span class="toggle-knob"></span>
+                </button>
+              </div>
+              <div class="search-option-desc">使用 MiMo 官方搜索插件，按次计费 (约 ¥16/千次)</div>
+            </div>
+            <div class="search-option">
+              <div class="search-option-header">
+                <span class="search-option-name">Tavily 外部搜索</span>
+                <button
+                  class="toggle-switch"
+                  :class="{on: settings.settings.external_search_enabled}"
+                  @click="settings.settings.external_search_enabled = !settings.settings.external_search_enabled"
+                >
+                  <span class="toggle-knob"></span>
+                </button>
+              </div>
+              <div class="search-option-desc">使用 Tavily API，需自行申请 Key</div>
+              <input
+                v-if="settings.settings.external_search_enabled"
+                type="password"
+                v-model="settings.settings.external_search_api_key"
+                placeholder="Tavily API Key"
+                class="input mt-6"
+              />
+            </div>
           </div>
-          <div class="setting-hint">
-            使用 Tavily API 进行联网搜索，需先获取 <a href="https://tavily.com" target="_blank">Tavily API Key</a>
-          </div>
+          <div class="setting-hint">两个搜索可同时开启，也可只开其一。关闭 MiMo 搜索可节省费用。</div>
         </div>
 
         <div class="setting-row">
@@ -287,6 +305,40 @@ function close() {
 .toggle-desc {
   font-size: 12px;
   color: var(--text-muted);
+}
+
+.search-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.search-option {
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.search-option-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.search-option-name {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.search-option-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.mt-6 {
+  margin-top: 8px;
 }
 
 .toggle-switch {
