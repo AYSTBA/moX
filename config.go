@@ -15,6 +15,7 @@ type Settings struct {
 	TopP        float64 `json:"top_p"`
 	MaxTokens   int    `json:"max_tokens"`
 	ThinkingEnabled bool `json:"thinking_enabled"`
+	WebSearchEnabled bool `json:"web_search_enabled"`
 }
 
 type Session struct {
@@ -26,12 +27,13 @@ type Session struct {
 }
 
 type Message struct {
-	ID               string     `json:"id"`
-	Role             string     `json:"role"`
-	Content          string     `json:"content"`
-	ReasoningContent string     `json:"reasoning_content,omitempty"`
-	ToolCalls        []ToolCall `json:"tool_calls,omitempty"`
-	Timestamp        int64      `json:"timestamp"`
+	ID               string       `json:"id"`
+	Role             string       `json:"role"`
+	Content          string       `json:"content"`
+	ReasoningContent string       `json:"reasoning_content,omitempty"`
+	ToolCalls        []ToolCall   `json:"tool_calls,omitempty"`
+	Annotations      []Annotation `json:"annotations,omitempty"`
+	Timestamp        int64        `json:"timestamp"`
 }
 
 type ToolCall struct {

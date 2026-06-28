@@ -18,6 +18,7 @@ export const useChatStore = defineStore('chat', () => {
   const streamingContent = ref('')
   const streamingThinking = ref('')
   const streamingToolCalls = ref([])
+  const streamingAnnotations = ref([])
   const models = ref([])
 
   const activeSession = computed(() =>
@@ -73,6 +74,7 @@ export const useChatStore = defineStore('chat', () => {
     streamingContent.value = ''
     streamingThinking.value = ''
     streamingToolCalls.value = []
+    streamingAnnotations.value = []
 
     SendMessage(activeSessionKey.value, content || '', model, thinking)
   }
@@ -100,11 +102,16 @@ export const useChatStore = defineStore('chat', () => {
       streamingToolCalls.value = calls
     })
 
+    EventsOn('chat:annotations', (anns) => {
+      streamingAnnotations.value = anns
+    })
+
     EventsOn('chat:done', (msg) => {
       isStreaming.value = false
       streamingContent.value = ''
       streamingThinking.value = ''
       streamingToolCalls.value = []
+      streamingAnnotations.value = []
       const s = sessions.value.find(s => s.key === activeSessionKey.value)
       if (s) s.messages.push(msg)
     })
@@ -113,6 +120,7 @@ export const useChatStore = defineStore('chat', () => {
       isStreaming.value = false
       streamingContent.value = ''
       streamingThinking.value = ''
+      streamingAnnotations.value = []
       const s = sessions.value.find(s => s.key === activeSessionKey.value)
       if (s) {
         s.messages.push({
@@ -138,6 +146,7 @@ export const useChatStore = defineStore('chat', () => {
     streamingContent,
     streamingThinking,
     streamingToolCalls,
+    streamingAnnotations,
     models,
     loadSessions,
     loadModels,

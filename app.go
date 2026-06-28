@@ -122,6 +122,17 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 		req.Thinking = &Thinking{Type: "enabled"}
 	}
 
+	if settings.WebSearchEnabled {
+		req.Tools = []interface{}{
+			WebSearchTool{
+				Type:        "web_search",
+				ForceSearch: false,
+				MaxKeyword:  3,
+				Limit:       5,
+			},
+		}
+	}
+
 	ctx, cancel := context.WithCancel(a.ctx)
 	a.cancelFunc = cancel
 
@@ -143,6 +154,7 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 	var reasoningBuilder strings.Builder
 	var contentBuilder strings.Builder
 	var toolCallsBuilder []ToolCall
+	var annotationsBuilder []Annotation
 
 	for event := range events {
 		switch event.Type {
@@ -155,10 +167,14 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 		case "toolcall":
 			toolCallsBuilder = append(toolCallsBuilder, event.ToolCalls...)
 			runtime.EventsEmit(a.ctx, "chat:toolcall", toolCallsBuilder)
+		case "annotations":
+			annotationsBuilder = append(annotationsBuilder, event.Annotations...)
+			runtime.EventsEmit(a.ctx, "chat:annotations", annotationsBuilder)
 		case "done":
 			assistantMsg.Content = contentBuilder.String()
 			assistantMsg.ReasoningContent = reasoningBuilder.String()
 			assistantMsg.ToolCalls = toolCallsBuilder
+			assistantMsg.Annotations = annotationsBuilder
 			session.Messages = append(session.Messages, assistantMsg)
 			SaveSession(session)
 			runtime.EventsEmit(a.ctx, "chat:done", assistantMsg)

@@ -31,17 +31,35 @@ type ChatRequest struct {
 	FrequencyPenalty   float64       `json:"frequency_penalty,omitempty"`
 	PresencePenalty    float64       `json:"presence_penalty,omitempty"`
 	Thinking           *Thinking     `json:"thinking,omitempty"`
+	Tools              []interface{} `json:"tools,omitempty"`
 }
 
 type Thinking struct {
 	Type string `json:"type"`
 }
 
+type WebSearchTool struct {
+	Type       string `json:"type"`
+	ForceSearch bool  `json:"force_search,omitempty"`
+	MaxKeyword int    `json:"max_keyword,omitempty"`
+	Limit      int    `json:"limit,omitempty"`
+}
+
 type StreamDelta struct {
-	Role             string     `json:"role"`
-	Content          string     `json:"content"`
-	ReasoningContent string     `json:"reasoning_content"`
-	ToolCalls        []ToolCall `json:"tool_calls"`
+	Role             string       `json:"role"`
+	Content          string       `json:"content"`
+	ReasoningContent string       `json:"reasoning_content"`
+	ToolCalls        []ToolCall   `json:"tool_calls"`
+	Annotations      []Annotation `json:"annotations"`
+}
+
+type Annotation struct {
+	Type        string `json:"type"`
+	URL         string `json:"url"`
+	Title       string `json:"title"`
+	Summary     string `json:"summary"`
+	SiteName    string `json:"site_name"`
+	PublishTime string `json:"publish_time"`
 }
 
 type StreamChoice struct {
@@ -63,13 +81,14 @@ type Usage struct {
 }
 
 type StreamEvent struct {
-	Type     string // "token", "thinking", "toolcall", "done", "error"
-	Content  string
-	Reasoning string
-	ToolCalls []ToolCall
-	Finish   string
-	Error    string
-	Usage    *Usage
+	Type       string // "token", "thinking", "toolcall", "annotations", "done", "error"
+	Content    string
+	Reasoning  string
+	ToolCalls  []ToolCall
+	Annotations []Annotation
+	Finish     string
+	Error      string
+	Usage      *Usage
 }
 
 func SendChatMessage(ctx context.Context, apiKey string, req ChatRequest, events chan<- StreamEvent) error {
@@ -142,6 +161,10 @@ func SendChatMessage(ctx context.Context, apiKey string, req ChatRequest, events
 
 		if len(delta.ToolCalls) > 0 {
 			events <- StreamEvent{Type: "toolcall", ToolCalls: delta.ToolCalls}
+		}
+
+		if len(delta.Annotations) > 0 {
+			events <- StreamEvent{Type: "annotations", Annotations: delta.Annotations}
 		}
 
 		if finish != "" {

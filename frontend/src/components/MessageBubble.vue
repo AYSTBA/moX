@@ -9,6 +9,7 @@ const props = defineProps({
 })
 
 const showThinking = ref(false)
+const showAnnotations = ref(false)
 
 marked.setOptions({
   highlight: function(code, lang) {
@@ -34,6 +35,10 @@ const hasThinking = computed(() => {
 
 const hasToolCalls = computed(() => {
   return props.message.tool_calls && props.message.tool_calls.length > 0
+})
+
+const hasAnnotations = computed(() => {
+  return props.message.annotations && props.message.annotations.length > 0
 })
 
 function copyCode(e) {
@@ -74,6 +79,20 @@ onMounted(() => {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span class="toolcall-name">{{ tc.function?.name }}</span>
           <code class="toolcall-args">{{ tc.function?.arguments }}</code>
+        </div>
+      </div>
+
+      <div v-if="hasAnnotations" class="annotations-block">
+        <div class="annotations-header" @click="showAnnotations = !showAnnotations">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span>搜索来源 ({{ message.annotations.length }})</span>
+          <svg class="annotations-arrow" :class="{open: showAnnotations}" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </div>
+        <div v-if="showAnnotations" class="annotations-list">
+          <a v-for="(ann, i) in message.annotations" :key="i" :href="ann.url" target="_blank" class="annotation-item">
+            <span class="ann-title">{{ ann.title }}</span>
+            <span class="ann-site">{{ ann.site_name }}</span>
+          </a>
         </div>
       </div>
 
@@ -233,6 +252,75 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.annotations-block {
+  margin-bottom: 8px;
+}
+
+.annotations-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: var(--thinking-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.annotations-header:hover {
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+
+.annotations-arrow {
+  transition: transform 0.2s;
+}
+
+.annotations-arrow.open {
+  transform: rotate(90deg);
+}
+
+.annotations-list {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.annotation-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--thinking-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  text-decoration: none;
+  color: var(--text-primary);
+  font-size: 12px;
+  transition: background 0.15s;
+}
+
+.annotation-item:hover {
+  background: var(--bg-hover);
+}
+
+.ann-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ann-site {
+  color: var(--text-muted);
+  font-size: 11px;
+  flex-shrink: 0;
 }
 
 .attachments-block {

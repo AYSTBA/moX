@@ -43,6 +43,16 @@ function handleSend(content, attachments) {
     <div class="chat-header">
       <ModelSelector v-model="selectedModel" :models="chat.models" />
       <div class="header-actions">
+        <div class="toggle-group" title="联网搜索">
+          <span class="toggle-label">搜索</span>
+          <button
+            class="toggle-switch"
+            :class="{on: settings.settings.web_search_enabled}"
+            @click="settings.settings.web_search_enabled = !settings.settings.web_search_enabled; settings.save()"
+          >
+            <span class="toggle-knob"></span>
+          </button>
+        </div>
         <div class="toggle-group" title="深度思考">
           <span class="toggle-label">思考</span>
           <button
@@ -78,6 +88,7 @@ function handleSend(content, attachments) {
               content: chat.streamingContent,
               reasoning_content: chat.streamingThinking,
               tool_calls: chat.streamingToolCalls,
+              annotations: chat.streamingAnnotations,
               timestamp: Date.now()
             }"
             :streaming="true"
