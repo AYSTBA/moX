@@ -276,7 +276,8 @@ func (a *App) directChat(ctx context.Context, apiKey, model string, thinking boo
 			annotationsBuilder = append(annotationsBuilder, event.Annotations...)
 			runtime.EventsEmit(a.ctx, "chat:annotations", annotationsBuilder)
 		case "done":
-			assistantMsg.Content = contentBuilder.String()
+			cleanContent := cleanFunctionCalls(contentBuilder.String())
+			assistantMsg.Content = cleanContent
 			assistantMsg.ReasoningContent = reasoningBuilder.String()
 			assistantMsg.ToolCalls = toolCallsBuilder
 			assistantMsg.Annotations = annotationsBuilder
@@ -291,6 +292,22 @@ func (a *App) directChat(ctx context.Context, apiKey, model string, thinking boo
 			runtime.EventsEmit(a.ctx, "chat:error", event.Error)
 		}
 	}
+}
+
+func cleanFunctionCalls(content string) string {
+	for {
+		start := strings.Index(content, `{"name"`)
+		if start == -1 {
+			break
+		}
+		end := strings.Index(content[start:], "}")
+		if end == -1 {
+			break
+		}
+		content = content[:start] + content[start+end+1:]
+	}
+	content = strings.TrimSpace(content)
+	return content
 }
 
 func (a *App) StopGeneration() {
