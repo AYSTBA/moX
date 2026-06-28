@@ -182,47 +182,6 @@ func SendChatMessage(ctx context.Context, apiKey string, req ChatRequest, events
 	return nil
 }
 
-func SendChatMessageSync(ctx context.Context, apiKey string, req ChatRequest) (string, error) {
-	req.Stream = false
-	body, err := json.Marshal(req)
-	if err != nil {
-		return "", err
-	}
-
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", apiBase+"/chat/completions", bytes.NewReader(body))
-	if err != nil {
-		return "", err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+apiKey)
-
-	resp, err := (&http.Client{Timeout: 30 * time.Second}).Do(httpReq)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		errBody, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("API error %d: %s", resp.StatusCode, string(errBody))
-	}
-
-	var result struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", err
-	}
-	if len(result.Choices) == 0 {
-		return "", fmt.Errorf("no choices returned")
-	}
-	return result.Choices[0].Message.Content, nil
-}
-
 func GenerateTitle(ctx context.Context, apiKey string, messages []ChatMessage) (string, error) {
 	trimmed := messages
 	if len(trimmed) > 6 {

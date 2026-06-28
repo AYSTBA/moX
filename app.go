@@ -125,72 +125,21 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 	a.cancelFunc = cancel
 
 	if settings.ExternalSearchEnabled && settings.ExternalSearchAPIKey != "" {
-		a.agentLoop(ctx, apiKey, model, thinking, settings, apiMessages, session)
+		runtime.EventsEmit(a.ctx, "chat:status", "searching")
+		var searchResults []TavilyResult
+		searchQuery := userContent
+		if searchQuery != "" {
+			var err error
+			searchResults, err = ExternalSearch(ctx, settings.ExternalSearchAPIKey, searchQuery)
+			if err != nil {
+				runtime.EventsEmit(a.ctx, "chat:toast", "搜索失败: "+err.Error())
+			}
+		}
+		runtime.EventsEmit(a.ctx, "chat:status", "")
+		a.directChat(ctx, apiKey, model, thinking, settings, apiMessages, session, searchResults)
 	} else {
 		a.directChat(ctx, apiKey, model, thinking, settings, apiMessages, session, nil)
 	}
-}
-
-func (a *App) agentLoop(ctx context.Context, apiKey, model string, thinking bool, settings *Settings, history []ChatMessage, session *Session) {
-	runtime.EventsEmit(a.ctx, "chat:status", "planning")
-
-	planPrompt := append([]ChatMessage{}, history...)
-	planPrompt = append(planPrompt, ChatMessage{
-		Role:    "system",
-		Content: `[Agent 规则]
-你是一个智能助手。在回答前，请先判断：
-1. 如果用户的问题需要最新信息（新闻、实时数据、特定URL内容、当前事件、价格等），输出 [SEARCH: 搜索关键词]
-2. 如果问题复杂需要深入推理，输出 [THINK]
-3. 如果可以直接回答，直接输出答案
-
-只输出一个标签或直接回答，不要解释你的判断过程。`,
-	})
-
-	planReq := ChatRequest{
-		Model:              model,
-		Messages:           planPrompt,
-		Stream:             false,
-		MaxCompletionTokens: 50,
-		Temperature:        0.1,
-	}
-
-	planResp, err := SendChatMessageSync(ctx, apiKey, planReq)
-	if err != nil {
-		runtime.EventsEmit(a.ctx, "chat:status", "")
-		runtime.EventsEmit(a.ctx, "chat:error", "Agent 规划失败: "+err.Error())
-		return
-	}
-
-	planText := strings.TrimSpace(planResp)
-	runtime.EventsEmit(a.ctx, "chat:status", "")
-	runtime.EventsEmit(a.ctx, "chat:toast", "Agent 判断: "+planText)
-
-	var searchQuery string
-	needThink := false
-
-	if strings.HasPrefix(planText, "[SEARCH:") {
-		raw := strings.TrimPrefix(planText, "[SEARCH:")
-		raw = strings.TrimSuffix(raw, "]")
-		searchQuery = strings.TrimSpace(raw)
-	} else if strings.HasPrefix(planText, "[THINK]") {
-		needThink = true
-	} else {
-		a.directChat(ctx, apiKey, model, thinking, settings, history, session, nil)
-		return
-	}
-
-	var searchResults []TavilyResult
-	if searchQuery != "" {
-		runtime.EventsEmit(a.ctx, "chat:status", "searching")
-		runtime.EventsEmit(a.ctx, "chat:toast", "正在搜索: "+searchQuery)
-		searchResults, err = ExternalSearch(ctx, settings.ExternalSearchAPIKey, searchQuery)
-		if err != nil {
-			runtime.EventsEmit(a.ctx, "chat:toast", "搜索失败: "+err.Error())
-		}
-		runtime.EventsEmit(a.ctx, "chat:status", "")
-	}
-
-	a.directChat(ctx, apiKey, model, thinking || needThink, settings, history, session, searchResults)
 }
 
 func (a *App) directChat(ctx context.Context, apiKey, model string, thinking bool, settings *Settings, history []ChatMessage, session *Session, searchResults []TavilyResult) {
