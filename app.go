@@ -1,0 +1,204 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
+)
+
+type App struct {
+	ctx        context.Context
+	cancelFunc context.CancelFunc
+}
+
+func NewApp() *App {
+	return &App{}
+}
+
+func (a *App) startup(ctx context.Context) {
+	a.ctx = ctx
+}
+
+func (a *App) GetSettings() *Settings {
+	return LoadSettings()
+}
+
+func (a *App) SaveSettings(s *Settings) error {
+	return SaveSettings(s)
+}
+
+func (a *App) GetSessions() []Session {
+	return LoadSessions()
+}
+
+func (a *App) CreateSession(label string) *Session {
+	s := &Session{
+		Key:       uuid.New().String()[:8],
+		Label:     label,
+		Messages:  []Message{},
+		CreatedAt: time.Now().UnixMilli(),
+		UpdatedAt: time.Now().UnixMilli(),
+	}
+	SaveSession(s)
+	return s
+}
+
+func (a *App) SaveSession(s *Session) error {
+	s.UpdatedAt = time.Now().UnixMilli()
+	return SaveSession(s)
+}
+
+func (a *App) DeleteSession(key string) error {
+	return DeleteSession(key)
+}
+
+func (a *App) SendMessage(sessionKey string, userContent string, model string, thinking bool) {
+	settings := LoadSettings()
+	apiKey := settings.APIKey
+	if apiKey == "" {
+		runtime.EventsEmit(a.ctx, "chat:error", "请先在设置中配置 API Key")
+		return
+	}
+
+	sessions := LoadSessions()
+	var session *Session
+	for i := range sessions {
+		if sessions[i].Key == sessionKey {
+			session = &sessions[i]
+			break
+		}
+	}
+	if session == nil {
+		runtime.EventsEmit(a.ctx, "chat:error", "会话不存在")
+		return
+	}
+
+	userMsg := Message{
+		ID:        uuid.New().String(),
+		Role:      "user",
+		Content:   userContent,
+		Timestamp: time.Now().UnixMilli(),
+	}
+	session.Messages = append(session.Messages, userMsg)
+	SaveSession(session)
+
+	runtime.EventsEmit(a.ctx, "chat:userMessage", userMsg)
+
+	apiMessages := make([]ChatMessage, 0)
+	if settings.SystemPrompt != "" {
+		apiMessages = append(apiMessages, ChatMessage{
+			Role:    "system",
+			Content: settings.SystemPrompt,
+		})
+	}
+	for _, m := range session.Messages {
+		cm := ChatMessage{
+			Role:    m.Role,
+			Content: m.Content,
+		}
+		if m.ReasoningContent != "" {
+			cm.ReasoningContent = m.ReasoningContent
+		}
+		if len(m.ToolCalls) > 0 {
+			cm.ToolCalls = m.ToolCalls
+		}
+		apiMessages = append(apiMessages, cm)
+	}
+
+	req := ChatRequest{
+		Model:              model,
+		Messages:           apiMessages,
+		MaxCompletionTokens: settings.MaxTokens,
+		Temperature:        settings.Temperature,
+		TopP:               settings.TopP,
+	}
+
+	if thinking {
+		req.Thinking = &Thinking{Type: "enabled"}
+	}
+
+	ctx, cancel := context.WithCancel(a.ctx)
+	a.cancelFunc = cancel
+
+	events := make(chan StreamEvent, 100)
+
+	go func() {
+		err := SendChatMessage(ctx, apiKey, req, events)
+		if err != nil {
+			events <- StreamEvent{Type: "error", Error: err.Error()}
+		}
+	}()
+
+	assistantMsg := Message{
+		ID:        uuid.New().String(),
+		Role:      "assistant",
+		Timestamp: time.Now().UnixMilli(),
+	}
+
+	var reasoningBuilder strings.Builder
+	var contentBuilder strings.Builder
+	var toolCallsBuilder []ToolCall
+
+	for event := range events {
+		switch event.Type {
+		case "thinking":
+			reasoningBuilder.WriteString(event.Reasoning)
+			runtime.EventsEmit(a.ctx, "chat:thinking", reasoningBuilder.String())
+		case "token":
+			contentBuilder.WriteString(event.Content)
+			runtime.EventsEmit(a.ctx, "chat:token", contentBuilder.String())
+		case "toolcall":
+			toolCallsBuilder = append(toolCallsBuilder, event.ToolCalls...)
+			runtime.EventsEmit(a.ctx, "chat:toolcall", toolCallsBuilder)
+		case "done":
+			assistantMsg.Content = contentBuilder.String()
+			assistantMsg.ReasoningContent = reasoningBuilder.String()
+			assistantMsg.ToolCalls = toolCallsBuilder
+			session.Messages = append(session.Messages, assistantMsg)
+			SaveSession(session)
+			runtime.EventsEmit(a.ctx, "chat:done", assistantMsg)
+		case "error":
+			runtime.EventsEmit(a.ctx, "chat:error", event.Error)
+		}
+	}
+}
+
+func (a *App) StopGeneration() {
+	if a.cancelFunc != nil {
+		a.cancelFunc()
+		a.cancelFunc = nil
+	}
+}
+
+func (a *App) GetModels() []map[string]string {
+	return []map[string]string{
+		{"id": "mimo-v2.5-pro", "name": "MiMo-V2.5 Pro", "desc": "旗舰模型，深度思考，1M上下文"},
+		{"id": "mimo-v2.5", "name": "MiMo-V2.5", "desc": "全模态理解（文本/图片/音频/视频）"},
+		{"id": "mimo-v2-pro", "name": "MiMo-V2 Pro", "desc": "上一代旗舰"},
+		{"id": "mimo-v2-flash", "name": "MiMo-V2 Flash", "desc": "快速响应，低成本"},
+		{"id": "mimo-v2-omni", "name": "MiMo-V2 Omni", "desc": "多模态理解"},
+	}
+}
+
+func (a *App) TestAPIKey(apiKey string) string {
+	req, err := http.NewRequest("GET", apiBase+"/models", nil)
+	if err != nil {
+		return fmt.Sprintf("请求创建失败: %v", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Sprintf("连接失败: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		return "ok"
+	}
+	return fmt.Sprintf("API 返回错误: %d", resp.StatusCode)
+}
