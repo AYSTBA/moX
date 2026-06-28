@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 )
 
 const apiBase = "https://api.xiaomimimo.com/v1"
@@ -235,4 +236,47 @@ func GenerateTitle(ctx context.Context, apiKey string, messages []ChatMessage) (
 	title := strings.TrimSpace(result.Choices[0].Message.Content)
 	title = strings.Trim(title, "\"'")
 	return title, nil
+}
+
+type TavilyResult struct {
+	Title   string `json:"title"`
+	URL     string `json:"url"`
+	Content string `json:"content"`
+}
+
+type TavilyResponse struct {
+	Results []TavilyResult `json:"results"`
+}
+
+func ExternalSearch(ctx context.Context, apiKey string, query string) ([]TavilyResult, error) {
+	body, _ := json.Marshal(map[string]interface{}{
+		"api_key":       apiKey,
+		"query":         query,
+		"search_depth":  "basic",
+		"max_results":   5,
+		"include_answer": false,
+	})
+
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.tavily.com/search", bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := (&http.Client{Timeout: 15 * time.Second}).Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		errBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("tavily error %d: %s", resp.StatusCode, string(errBody))
+	}
+
+	var result TavilyResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+	return result.Results, nil
 }

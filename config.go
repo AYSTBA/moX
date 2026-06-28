@@ -16,6 +16,9 @@ type Settings struct {
 	MaxTokens   int    `json:"max_tokens"`
 	ThinkingEnabled bool `json:"thinking_enabled"`
 	WebSearchEnabled bool `json:"web_search_enabled"`
+	ExternalSearchAPIKey string `json:"external_search_api_key"`
+	ExternalSearchEnabled bool `json:"external_search_enabled"`
+	TimeAwareness bool `json:"time_awareness"`
 }
 
 type Session struct {

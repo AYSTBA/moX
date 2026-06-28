@@ -61,6 +61,46 @@ function close() {
           ></textarea>
         </div>
 
+        <div class="setting-group">
+          <div class="setting-row">
+            <div class="setting-group half">
+              <label>时间感知</label>
+              <div class="toggle-row">
+                <button
+                  class="toggle-switch"
+                  :class="{on: settings.settings.time_awareness}"
+                  @click="settings.settings.time_awareness = !settings.settings.time_awareness"
+                >
+                  <span class="toggle-knob"></span>
+                </button>
+                <span class="toggle-desc">向模型提供当前日期时间</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <label>外部搜索 API (Tavily)</label>
+          <div class="api-key-row">
+            <input
+              type="password"
+              v-model="settings.settings.external_search_api_key"
+              placeholder="Tavily API Key (可选)"
+              class="input"
+            />
+            <button
+              class="toggle-switch"
+              :class="{on: settings.settings.external_search_enabled}"
+              @click="settings.settings.external_search_enabled = !settings.settings.external_search_enabled"
+            >
+              <span class="toggle-knob"></span>
+            </button>
+          </div>
+          <div class="setting-hint">
+            使用 Tavily API 进行联网搜索，需先获取 <a href="https://tavily.com" target="_blank">Tavily API Key</a>
+          </div>
+        </div>
+
         <div class="setting-row">
           <div class="setting-group half">
             <label>Temperature</label>
@@ -236,6 +276,51 @@ function close() {
 .setting-hint a {
   color: var(--text-primary);
   text-decoration: underline;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toggle-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.toggle-switch {
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.25s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.toggle-switch.on {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+}
+
+.toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: all 0.25s ease;
+}
+
+.toggle-switch.on .toggle-knob {
+  left: 20px;
+  background: var(--bg-primary);
 }
 
 .setting-row {

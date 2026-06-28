@@ -89,17 +89,43 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 
 	runtime.EventsEmit(a.ctx, "chat:userMessage", userMsg)
 
+	effectiveContent := userContent
+	if settings.ExternalSearchEnabled && settings.ExternalSearchAPIKey != "" && userContent != "" {
+		results, err := ExternalSearch(a.ctx, settings.ExternalSearchAPIKey, userContent)
+		if err == nil && len(results) > 0 {
+			var sb strings.Builder
+			sb.WriteString("[联网搜索结果]\n")
+			for i, r := range results {
+				sb.WriteString(fmt.Sprintf("%d. %s\n   %s\n   %s\n\n", i+1, r.Title, r.URL, r.Content))
+			}
+			sb.WriteString("[/联网搜索结果]\n\n")
+			sb.WriteString(userContent)
+			effectiveContent = sb.String()
+		}
+	}
+
 	apiMessages := make([]ChatMessage, 0)
-	if settings.SystemPrompt != "" {
+	if settings.SystemPrompt != "" || settings.TimeAwareness {
+		prompt := settings.SystemPrompt
+		if settings.TimeAwareness {
+			now := time.Now()
+			weekdays := []string{"日", "一", "二", "三", "四", "五", "六"}
+			timeInfo := fmt.Sprintf("\n当前时间：%s 星期%s %02d:%02d", now.Format("2006年01月02日"), weekdays[now.Weekday()], now.Hour(), now.Minute())
+			prompt = prompt + timeInfo
+		}
 		apiMessages = append(apiMessages, ChatMessage{
 			Role:    "system",
-			Content: settings.SystemPrompt,
+			Content: prompt,
 		})
 	}
-	for _, m := range session.Messages {
+	for i, m := range session.Messages {
+		content := m.Content
+		if m.Role == "user" && i == len(session.Messages)-1 {
+			content = effectiveContent
+		}
 		cm := ChatMessage{
 			Role:    m.Role,
-			Content: m.Content,
+			Content: content,
 		}
 		if m.ReasoningContent != "" {
 			cm.ReasoningContent = m.ReasoningContent

@@ -13,6 +13,9 @@ export const useSettingsStore = defineStore('settings', () => {
     max_tokens: 4096,
     thinking_enabled: true,
     web_search_enabled: false,
+    external_search_api_key: '',
+    external_search_enabled: false,
+    time_awareness: false,
   })
 
   const showSettings = ref(false)
