@@ -110,10 +110,11 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 			runtime.EventsEmit(a.ctx, "chat:toast", "搜索失败: "+err.Error())
 		} else if len(results) > 0 {
 			var sb strings.Builder
-			sb.WriteString("以下是联网搜索到的参考资料，请基于这些信息回答用户问题。如果参考资料不足以回答，请说明。")
+			sb.WriteString("你具备联网搜索能力。以下是针对用户问题搜索到的实时网络资料：\n")
 			for i, r := range results {
 				sb.WriteString(fmt.Sprintf("\n\n[%d] %s\n来源: %s\n%s", i+1, r.Title, r.URL, r.Content))
 			}
+			sb.WriteString("\n\n请基于以上搜索结果回答用户问题。直接引用其中的信息，不要说「我无法访问互联网」或「我的知识有截止日期」。如果搜索结果不足以回答，如实说明。")
 			apiMessages = append(apiMessages, ChatMessage{
 				Role:    "system",
 				Content: sb.String(),
