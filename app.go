@@ -89,23 +89,6 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 
 	runtime.EventsEmit(a.ctx, "chat:userMessage", userMsg)
 
-	effectiveContent := userContent
-	if settings.ExternalSearchEnabled && settings.ExternalSearchAPIKey != "" && userContent != "" {
-		results, err := ExternalSearch(a.ctx, settings.ExternalSearchAPIKey, userContent)
-		if err != nil {
-			runtime.EventsEmit(a.ctx, "chat:toast", "Tavily 搜索失败: "+err.Error())
-		} else if len(results) > 0 {
-			var sb strings.Builder
-			sb.WriteString("[联网搜索结果]\n")
-			for i, r := range results {
-				sb.WriteString(fmt.Sprintf("%d. %s\n   %s\n   %s\n\n", i+1, r.Title, r.URL, r.Content))
-			}
-			sb.WriteString("[/联网搜索结果]\n\n")
-			sb.WriteString(userContent)
-			effectiveContent = sb.String()
-		}
-	}
-
 	apiMessages := make([]ChatMessage, 0)
 	if settings.SystemPrompt != "" || settings.TimeAwareness {
 		prompt := settings.SystemPrompt
@@ -120,14 +103,28 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 			Content: prompt,
 		})
 	}
-	for i, m := range session.Messages {
-		content := m.Content
-		if m.Role == "user" && i == len(session.Messages)-1 {
-			content = effectiveContent
+
+	if settings.ExternalSearchEnabled && settings.ExternalSearchAPIKey != "" && userContent != "" {
+		results, err := ExternalSearch(a.ctx, settings.ExternalSearchAPIKey, userContent)
+		if err != nil {
+			runtime.EventsEmit(a.ctx, "chat:toast", "搜索失败: "+err.Error())
+		} else if len(results) > 0 {
+			var sb strings.Builder
+			sb.WriteString("以下是联网搜索到的参考资料，请基于这些信息回答用户问题。如果参考资料不足以回答，请说明。")
+			for i, r := range results {
+				sb.WriteString(fmt.Sprintf("\n\n[%d] %s\n来源: %s\n%s", i+1, r.Title, r.URL, r.Content))
+			}
+			apiMessages = append(apiMessages, ChatMessage{
+				Role:    "system",
+				Content: sb.String(),
+			})
 		}
+	}
+
+	for _, m := range session.Messages {
 		cm := ChatMessage{
 			Role:    m.Role,
-			Content: content,
+			Content: m.Content,
 		}
 		if m.ReasoningContent != "" {
 			cm.ReasoningContent = m.ReasoningContent
