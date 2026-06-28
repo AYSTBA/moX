@@ -167,7 +167,11 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 	go func() {
 		err := SendChatMessage(ctx, apiKey, req, events)
 		if err != nil {
-			events <- StreamEvent{Type: "error", Error: err.Error()}
+			errMsg := err.Error()
+			if strings.Contains(errMsg, "webSearchEnabled is false") {
+				errMsg = "MiMo 联网搜索插件未开启。请前往 platform.xiaomimimo.com 控制台激活搜索插件，或关闭搜索开关。"
+			}
+			events <- StreamEvent{Type: "error", Error: errMsg}
 		}
 	}()
 
