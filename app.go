@@ -90,13 +90,16 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 	runtime.EventsEmit(a.ctx, "chat:userMessage", userMsg)
 
 	apiMessages := make([]ChatMessage, 0)
-	if settings.SystemPrompt != "" || settings.TimeAwareness {
+	if settings.SystemPrompt != "" || settings.TimeAwareness || settings.ExternalSearchEnabled {
 		prompt := settings.SystemPrompt
 		if settings.TimeAwareness {
 			now := time.Now()
 			weekdays := []string{"日", "一", "二", "三", "四", "五", "六"}
 			timeInfo := fmt.Sprintf("\n当前时间：%s 星期%s %02d:%02d", now.Format("2006年01月02日"), weekdays[now.Weekday()], now.Hour(), now.Minute())
 			prompt = prompt + timeInfo
+		}
+		if settings.ExternalSearchEnabled {
+			prompt = prompt + "\n\n你拥有联网搜索能力。当用户提问涉及实时信息、最新资讯、特定URL内容、当前事件等时，系统会自动搜索并将结果传入。你应当直接使用搜索结果回答，不要说「我无法访问互联网」或「我的知识有截止日期」。"
 		}
 		apiMessages = append(apiMessages, ChatMessage{
 			Role:    "system",
@@ -160,6 +163,7 @@ func (a *App) agentLoop(ctx context.Context, apiKey, model string, thinking bool
 
 	planText := strings.TrimSpace(planResp)
 	runtime.EventsEmit(a.ctx, "chat:status", "")
+	runtime.EventsEmit(a.ctx, "chat:toast", "Agent 判断: "+planText)
 
 	var searchQuery string
 	needThink := false
