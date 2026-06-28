@@ -183,7 +183,7 @@ func (a *App) agentLoop(ctx context.Context, apiKey, model string, thinking bool
 	if searchQuery != "" {
 		runtime.EventsEmit(a.ctx, "chat:status", "searching")
 		runtime.EventsEmit(a.ctx, "chat:toast", "正在搜索: "+searchQuery)
-		searchResults, err = ExternalSearch(ctx, apiKey, searchQuery)
+		searchResults, err = ExternalSearch(ctx, settings.ExternalSearchAPIKey, searchQuery)
 		if err != nil {
 			runtime.EventsEmit(a.ctx, "chat:toast", "搜索失败: "+err.Error())
 		}
