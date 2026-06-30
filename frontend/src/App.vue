@@ -18,8 +18,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="bg-blur" v-if="settings.settings.personalization_enabled && settings.settings.background_image"></div>
   <div class="app-layout" :class="settings.settings.theme">
+    <div class="bg-blur" v-if="settings.settings.personalization_enabled && settings.settings.background_image"></div>
     <Sidebar />
     <ChatView />
     <Settings v-if="settings.showSettings" />
@@ -78,8 +78,10 @@ html, body, #app {
   height: 100vh;
   background: var(--bg-primary);
   color: var(--text-primary);
-  position: relative;
-  z-index: 1;
+}
+
+.personalized .app-layout {
+  background: transparent !important;
 }
 
 .dark {
@@ -120,17 +122,17 @@ html, body, #app {
   --scrollbar-thumb: #cccccc;
 }
 
-/* Background image blur div (real element, not pseudo) */
+/* Background image with blur */
 .bg-blur {
   position: fixed;
   inset: 0;
-  z-index: 0;
-  background: var(--bg-image) center/cover no-repeat fixed;
-  filter: blur(30px) brightness(0.45);
+  z-index: -1;
+  background: var(--bg-image, none) center/cover no-repeat fixed;
+  filter: blur(30px) brightness(0.5);
   pointer-events: none;
 }
 
-/* Frosted glass - override component scoped backgrounds */
+/* Personalized frosted glass - content containers become semi-transparent */
 .personalized .sidebar,
 .personalized .chat-header,
 .personalized .chat-input-area {
@@ -153,38 +155,6 @@ html, body, #app {
 
 .personalized .settings-overlay {
   background: rgba(0, 0, 0, 0.5) !important;
-}
-
-/* Accent color spread across more UI elements */
-.personalized .toggle-switch.on {
-  background: var(--toggle-on-bg, var(--text-primary)) !important;
-  border-color: var(--toggle-on-bg, var(--text-primary)) !important;
-}
-
-.personalized .toggle-switch.on .toggle-knob {
-  background: var(--bg-primary) !important;
-}
-
-.personalized .btn-send,
-.personalized .btn-primary {
-  background: var(--accent, var(--text-primary)) !important;
-  color: var(--bg-primary) !important;
-}
-
-.personalized .message.user .message-avatar {
-  background: var(--avatar-bg, var(--text-primary)) !important;
-}
-
-.personalized .input-container:focus-within {
-  border-color: var(--input-focus-border, var(--text-muted)) !important;
-}
-
-.personalized .thinking-content {
-  border-left-color: var(--thinking-accent, var(--border-color)) !important;
-}
-
-.personalized .message.user .message-body {
-  border-color: var(--message-user-border, var(--border-color)) !important;
 }
 
 .toast {

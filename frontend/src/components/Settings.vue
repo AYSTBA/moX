@@ -6,15 +6,6 @@ import {TestAPIKey} from '../../wailsjs/go/main/App'
 const settings = useSettingsStore()
 const testing = ref(false)
 const testResult = ref('')
-const bgInput = ref(null)
-
-const colorSchemes = [
-  {id: "default", name: "\u9ED8\u8BA4", value: "", color: "#e8e8e8"},
-  {id: "blue", name: "\u84DD\u8272", value: "#4488cc", color: "#4488cc"},
-  {id: "green", name: "\u7EFF\u8272", value: "#44aa66", color: "#44aa66"},
-  {id: "purple", name: "\u7D2B\u8272", value: "#9966cc", color: "#9966cc"},
-  {id: "warm", name: "\u6696\u8272", value: "#cc8844", color: "#cc8844"},
-]
 
 function onBgSelected(e) {
   const file = e.target.files?.[0]
@@ -150,24 +141,11 @@ function close() {
           </div>
 
           <div v-if="settings.settings.personalization_enabled" class="personalization-body">
-            <label>配色方案</label>
-            <div class="color-options">
-              <div
-                v-for="c in colorSchemes"
-                :key="c.id"
-                class="color-option"
-                :class="{active: settings.settings.accent_color === c.value}"
-                @click="settings.settings.accent_color = c.value; settings.save()"
-              >
-                <div class="color-swatch" :style="{background: c.color}"></div>
-                <span>{{ c.name }}</span>
-              </div>
-            </div>
 
             <label>背景图片</label>
             <div class="bg-image-row">
               <button class="btn-upload" @click="bgInput.click()">
-                {{ settings.settings.background_image ? &quot;更换图片&quot; : &quot;选择图片&quot; }}
+                {{ settings.settings.background_image ? "更换图片" : "选择图片" }}
               </button>
               <button v-if="settings.settings.background_image" class="btn-clear" @click="settings.settings.background_image = ''; settings.save()">
                 清除
@@ -524,26 +502,6 @@ function close() {
   margin-top: 0;
 }
 
-.color-options {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.color-option {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 12px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 12px;
-  color: var(--text-primary);
-}
 
 .color-option:hover {
   border-color: var(--text-muted);

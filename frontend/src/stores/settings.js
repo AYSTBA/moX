@@ -2,14 +2,6 @@
 import {ref} from 'vue'
 import {GetSettings, SaveSettings} from '../../wailsjs/go/main/App'
 
-function hexToRgba(hex, alpha) {
-  if (!hex || hex.length < 7) return hex
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`
-}
-
 export const useSettingsStore = defineStore('settings', () => {
   const settings = ref({
     api_key: '',
@@ -25,8 +17,6 @@ export const useSettingsStore = defineStore('settings', () => {
     external_search_enabled: false,
     time_awareness: false,
     personalization_enabled: false,
-    accent_color: '',
-    bg_color: '',
     background_image: '',
   })
 
@@ -57,25 +47,10 @@ export const useSettingsStore = defineStore('settings', () => {
   function applyPersonalization() {
     const s = settings.value
     const root = document.documentElement
-    const enabled = s.personalization_enabled
 
-    root.classList.toggle('personalized', enabled && (s.accent_color || s.background_image))
+    root.classList.toggle('personalized', s.personalization_enabled && !!s.background_image)
 
-    if (enabled && s.accent_color) {
-      const c = s.accent_color
-      root.style.setProperty('--accent', c)
-      root.style.setProperty('--accent-hover', c + 'cc')
-      root.style.setProperty('--toggle-on-bg', c)
-      root.style.setProperty('--input-focus-border', c)
-      root.style.setProperty('--avatar-bg', c)
-      root.style.setProperty('--thinking-accent', hexToRgba(c, 0.3))
-      root.style.setProperty('--message-user-border', hexToRgba(c, 0.4))
-    } else {
-      const vars = ['--accent','--accent-hover','--toggle-on-bg','--input-focus-border','--avatar-bg','--thinking-accent','--message-user-border']
-      vars.forEach(v => root.style.removeProperty(v))
-    }
-
-    if (enabled && s.background_image) {
+    if (s.personalization_enabled && s.background_image) {
       root.style.setProperty('--bg-image', 'url(' + s.background_image + ')')
     } else {
       root.style.setProperty('--bg-image', 'none')
