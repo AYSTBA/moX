@@ -63,12 +63,6 @@ const hasToolCalls = computed(() => {
 
 const outputLen = computed(() => props.message.content ? props.message.content.length : 0)
 
-const tokenDisplay = computed(() => {
-  const u = props.message.usage
-  if (u?.total_tokens) return u.total_tokens + ' (' + (u.prompt_tokens || '?') + '+' + (u.completion_tokens || '?') + ')'
-  if (props.message.content) return String.fromCharCode(8776) + Math.ceil(props.message.content.length / 3) + ' (估算)'
-  return '-'
-})
 
 const timeDisplay = computed(() => {
   const total = props.message.total_duration
@@ -167,7 +161,6 @@ onMounted(() => {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           </button>
           <div v-if="showInfo" class="info-tooltip">
-            <div class="tr">Token: {{ tokenDisplay }}</div>
             <div class="tr">输出长度: {{ outputLen }} 字</div>
             <div class="tr">用时: {{ timeDisplay }}</div>
           </div>
