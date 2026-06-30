@@ -60,7 +60,32 @@ const hasToolCalls = computed(() => {
   return props.message.tool_calls && props.message.tool_calls.length > 0
 })
 
+
+const outputLen = computed(() => props.message.content ? props.message.content.length : 0)
+
+const tokenDisplay = computed(() => {
+  const u = props.message.usage
+  if (u?.total_tokens) return u.total_tokens + ' (' + (u.prompt_tokens || '?') + '+' + (u.completion_tokens || '?') + ')'
+  if (props.message.content) return String.fromCharCode(8776) + Math.ceil(props.message.content.length / 3) + ' (估算)'
+  return '-'
+})
+
+const timeDisplay = computed(() => {
+  const total = props.message.total_duration
+  const think = props.message.thinking_duration
+  if (total) return formatDuration(total) + (think ? ' (思考 ' + formatDuration(think) + ')' : '')
+  if (think) return formatDuration(think)
+  return '-'
+})
 const hasAnnotations = computed(() => {
+
+const timeDisplay = computed(() => {
+  const total = props.message.total_duration
+  const think = props.message.thinking_duration
+  if (total) return formatDuration(total) + (think ? ' (思考 ' + formatDuration(think) + ')' : '')
+  if (think) return formatDuration(think)
+  return '-'
+})
   return props.message.annotations && props.message.annotations.length > 0
 })
 

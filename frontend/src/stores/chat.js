@@ -21,6 +21,7 @@ export const useChatStore = defineStore('chat', () => {
   const streamingAnnotations = ref([])
 const thinkingStartTime = ref(0)
 const thinkingDuration = ref(0)
+const sendTime = ref(0)
   const models = ref([])
   const toastMessage = ref('')
   const showToast = ref(false)
@@ -119,6 +120,8 @@ const thinkingDuration = ref(0)
   function setupEvents() {
     EventsOn('chat:userMessage', (msg) => {
       msg.thinking_duration = thinkingDuration.value
+      msg.total_duration = Date.now() - sendTime.value
+      sendTime.value = 0
       const s = sessions.value.find(s => s.key === activeSessionKey.value)
       if (s) s.messages.push(msg)
     })
@@ -151,6 +154,8 @@ const thinkingDuration = ref(0)
       streamingToolCalls.value = []
       streamingAnnotations.value = []
       msg.thinking_duration = thinkingDuration.value
+      msg.total_duration = Date.now() - sendTime.value
+      sendTime.value = 0
       const s = sessions.value.find(s => s.key === activeSessionKey.value)
       if (s) s.messages.push(msg)
     })
@@ -215,6 +220,7 @@ const thinkingDuration = ref(0)
     setupEvents,
   }
 })
+
 
 
 
