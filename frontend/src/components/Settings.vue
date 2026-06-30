@@ -156,6 +156,13 @@ function close() {
               <img :src="settings.settings.background_image" class="bg-thumb" />
             </div>
             <input type="file" ref="bgInput" accept="image/*" style="display:none" @change="onBgSelected" />
+
+            <label>雾面强度</label>
+            <div class="slider-row">
+              <input type="range" v-model.number="settings.settings.blur_intensity" min="0" max="100" step="1" @input="settings.save()" />
+              <span class="slider-value">{{ settings.settings.blur_intensity }}px</span>
+            </div>
+            <div class="setting-hint">建议图片: 1920×1080 或更高分辨率</div>
           </div>
         </div>
 

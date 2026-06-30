@@ -20,6 +20,7 @@ type Settings struct {
 	ExternalSearchEnabled bool `json:"external_search_enabled"`
 	TimeAwareness bool `json:"time_awareness"`
 	PersonalizationEnabled bool   `json:"personalization_enabled"`
+	BlurIntensity           int    `json:"blur_intensity"`
 	BackgroundImage        string `json:"background_image"`
 }
 
