@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"bufio"
@@ -15,11 +15,27 @@ import (
 const apiBase = "https://api.xiaomimimo.com/v1"
 
 type ChatMessage struct {
-	Role               string      `json:"role"`
-	Content            interface{} `json:"content,omitempty"`
-	ReasoningContent   string      `json:"reasoning_content,omitempty"`
-	ToolCalls          []ToolCall  `json:"tool_calls,omitempty"`
-	ToolCallID         string      `json:"tool_call_id,omitempty"`
+	Role             string      `json:"role"`
+	Content          interface{} `json:"content,omitempty"`
+	ReasoningContent string      `json:"reasoning_content,omitempty"`
+	ToolCalls        []ToolCall  `json:"tool_calls,omitempty"`
+	ToolCallID       string      `json:"tool_call_id,omitempty"`
+}
+
+type FileAttachment struct {
+	Name     string `json:"name"`
+	MimeType string `json:"mimeType"`
+	Data     string `json:"data"`
+}
+
+type ContentPart struct {
+	Type     string    `json:"type"`
+	Text     string    `json:"text,omitempty"`
+	ImageURL *ImageURL `json:"image_url,omitempty"`
+}
+
+type ImageURL struct {
+	URL string `json:"url"`
 }
 
 type ChatRequest struct {
@@ -82,14 +98,14 @@ type Usage struct {
 }
 
 type StreamEvent struct {
-	Type       string // "token", "thinking", "toolcall", "annotations", "done", "error"
-	Content    string
-	Reasoning  string
-	ToolCalls  []ToolCall
+	Type        string       // "token", "thinking", "toolcall", "annotations", "done", "error"
+	Content     string
+	Reasoning   string
+	ToolCalls   []ToolCall
 	Annotations []Annotation
-	Finish     string
-	Error      string
-	Usage      *Usage
+	Finish      string
+	Error       string
+	Usage       *Usage
 }
 
 func SendChatMessage(ctx context.Context, apiKey string, req ChatRequest, events chan<- StreamEvent) error {

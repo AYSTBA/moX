@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"context"
@@ -57,7 +57,7 @@ func (a *App) DeleteSession(key string) error {
 	return DeleteSession(key)
 }
 
-func (a *App) SendMessage(sessionKey string, userContent string, model string, thinking bool) {
+func (a *App) SendMessage(sessionKey string, userContent string, model string, thinking bool, attachments []FileAttachment) {
 	settings := LoadSettings()
 	apiKey := settings.APIKey
 	if apiKey == "" {
@@ -119,6 +119,27 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 			cm.ToolCalls = m.ToolCalls
 		}
 		apiMessages = append(apiMessages, cm)
+	}
+
+	// If there are file attachments, convert the last user message to multimodal content parts
+	if len(attachments) > 0 {
+		for i := len(apiMessages) - 1; i >= 0; i-- {
+			if apiMessages[i].Role == "user" {
+				var parts []ContentPart
+				if text, ok := apiMessages[i].Content.(string); ok && text != "" {
+					parts = append(parts, ContentPart{Type: "text", Text: text})
+				}
+				for _, att := range attachments {
+					if strings.HasPrefix(att.MimeType, "image/") {
+						parts = append(parts, ContentPart{Type: "image_url", ImageURL: &ImageURL{URL: "data:" + att.MimeType + ";base64," + att.Data}})
+					} else {
+						parts = append(parts, ContentPart{Type: "text", Text: fmt.Sprintf("[附件: %s]", att.Name)})
+					}
+				}
+				apiMessages[i].Content = parts
+				break
+			}
+		}
 	}
 
 	ctx, cancel := context.WithCancel(a.ctx)

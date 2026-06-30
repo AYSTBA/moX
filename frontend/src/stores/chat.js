@@ -79,7 +79,32 @@ export const useChatStore = defineStore('chat', () => {
     streamingToolCalls.value = []
     streamingAnnotations.value = []
 
-    SendMessage(activeSessionKey.value, content || '', model, thinking)
+    let processedAttachments = []
+    if (attachments && attachments.length > 0) {
+      processedAttachments = await Promise.all(attachments.map(readFileAtt))
+    }
+
+    SendMessage(activeSessionKey.value, content || '', model, thinking, processedAttachments)
+  }
+
+  function readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const dataUrl = reader.result
+        resolve(dataUrl.split(',')[1])
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
+  function readFileAtt(att) {
+    return readFileAsBase64(att.file).then(data => ({
+      name: att.name,
+      mimeType: att.type,
+      data: data,
+    }))
   }
 
   function stop() {
