@@ -87,6 +87,7 @@ const sendTime = ref(0)
       processedAttachments = await Promise.all(attachments.map(readFileAtt))
     }
 
+    sendTime.value = Date.now()
     SendMessage(activeSessionKey.value, content || '', model, thinking, processedAttachments)
   }
 
@@ -119,10 +120,7 @@ const sendTime = ref(0)
 
   function setupEvents() {
     EventsOn('chat:userMessage', (msg) => {
-      msg.thinking_duration = thinkingDuration.value
-      msg.total_duration = Date.now() - sendTime.value
-      sendTime.value = 0
-      const s = sessions.value.find(s => s.key === activeSessionKey.value)
+      const s = sessions.value.find(sess => sess.key === activeSessionKey.value)
       if (s) s.messages.push(msg)
     })
 
