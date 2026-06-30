@@ -44,6 +44,7 @@ type AttachmentItem struct {
 	Name string `json:"name"`
 	Type string `json:"type,omitempty"`
 	Size int64  `json:"size,omitempty"`
+	Data string `json:"data,omitempty"`
 }
 
 type ToolCall struct {

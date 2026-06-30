@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import {computed, ref, onMounted} from 'vue'
 import {marked} from 'marked'
 import hljs from 'highlight.js'
@@ -10,6 +10,15 @@ const props = defineProps({
 
 const showThinking = ref(false)
 const showAnnotations = ref(false)
+const lightboxSrc = ref(null)
+
+function isImage(att) {
+  return att.type && att.type.startsWith('image/')
+}
+
+function isVideo(att) {
+  return att.type && att.type.startsWith('video/')
+}
 
 marked.setOptions({
   highlight: function(code, lang) {
@@ -109,6 +118,12 @@ onMounted(() => {
         <span></span><span></span><span></span>
       </div>
     </div>
+  <div v-if="lightboxSrc" class="lightbox-overlay" @click="lightboxSrc = null">
+    <img :src="lightboxSrc" class="lightbox-img" @click.stop />
+    <button class="lightbox-close" @click="lightboxSrc = null">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
   </div>
 </template>
 
@@ -361,6 +376,49 @@ onMounted(() => {
   0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
   40% { transform: scale(1); opacity: 1; }
 }
+.attachments-block {
+  margin-bottom: 8px;
+}
+
+.attachment-item {
+  margin-bottom: 6px;
+}
+
+.attachment-item:last-child {
+  margin-bottom: 0;
+}
+
+.attachment-media {
+  max-width: 100%;
+  max-height: 400px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: block;
+  background: var(--bg-tertiary);
+  object-fit: cover;
+}
+
+.attachment-media:hover {
+  opacity: 0.95;
+}
+
+video.attachment-media {
+  max-height: 350px;
+  cursor: default;
+  background: #000;
+}
+
+.attachment-file {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--thinking-bg);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
 </style>
 
 <style>
@@ -487,4 +545,92 @@ onMounted(() => {
   border-top: 1px solid var(--border-color);
   margin: 16px 0;
 }
+.attachments-block {
+  margin-bottom: 8px;
+}
+
+.attachment-item {
+  margin-bottom: 6px;
+}
+
+.attachment-item:last-child {
+  margin-bottom: 0;
+}
+
+.attachment-media {
+  max-width: 100%;
+  max-height: 400px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: block;
+  background: var(--bg-tertiary);
+  object-fit: cover;
+}
+
+.attachment-media:hover {
+  opacity: 0.95;
+}
+
+video.attachment-media {
+  max-height: 350px;
+  cursor: default;
+  background: #000;
+}
+
+.attachment-file {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--thinking-bg);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.lightbox-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  cursor: zoom-out;
+}
+
+.lightbox-img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  border-radius: 4px;
+  cursor: default;
+}
+
+.lightbox-close {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.lightbox-close:hover {
+  background: rgba(255,255,255,0.3);
+}
 </style>
+
+

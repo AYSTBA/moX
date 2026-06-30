@@ -392,10 +392,11 @@ func (a *App) TestAPIKey(apiKey string) string {
 func toAttachmentItems(attachments []FileAttachment) []AttachmentItem {
 	items := make([]AttachmentItem, 0, len(attachments))
 	for _, att := range attachments {
+		dataURI := "data:" + att.MimeType + ";base64," + att.Data
 		items = append(items, AttachmentItem{
 			Name: att.Name,
 			Type: att.MimeType,
-			Size: 0,
+			Data: dataURI,
 		})
 	}
 	return items
