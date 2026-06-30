@@ -6,6 +6,26 @@ import {TestAPIKey} from '../../wailsjs/go/main/App'
 const settings = useSettingsStore()
 const testing = ref(false)
 const testResult = ref('')
+const bgInput = ref(null)
+
+const colorSchemes = [
+  {id: "default", name: "\u9ED8\u8BA4", value: "", color: "#e8e8e8"},
+  {id: "blue", name: "\u84DD\u8272", value: "#4488cc", color: "#4488cc"},
+  {id: "green", name: "\u7EFF\u8272", value: "#44aa66", color: "#44aa66"},
+  {id: "purple", name: "\u7D2B\u8272", value: "#9966cc", color: "#9966cc"},
+  {id: "warm", name: "\u6696\u8272", value: "#cc8844", color: "#cc8844"},
+]
+
+function onBgSelected(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = () => {
+    settings.settings.background_image = reader.result
+    settings.save()
+  }
+  reader.readAsDataURL(file)
+}
 
 async function testKey() {
   testing.value = true
@@ -117,36 +137,6 @@ function close() {
             </div>
           </div>
           <div class="setting-hint">两个搜索可同时开启，也可只开其一。关闭 MiMo 搜索可节省费用。</div>
-        </div>
-
-        <div class="setting-row">
-          <div class="setting-group half">
-            <label>Temperature</label>
-            <div class="slider-row">
-              <input type="range" v-model.number="settings.settings.temperature" min="0" max="1.5" step="0.1" />
-              <span class="slider-value">{{ settings.settings.temperature }}</span>
-            </div>
-          </div>
-          <div class="setting-group half">
-            <label>Top P</label>
-            <div class="slider-row">
-              <input type="range" v-model.number="settings.settings.top_p" min="0.01" max="1" step="0.01" />
-              <span class="slider-value">{{ settings.settings.top_p }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="setting-group">
-          <label>最大输出 Token</label>
-          <input
-            type="number"
-            v-model.number="settings.settings.max_tokens"
-            class="input"
-            min="256"
-            max="131072"
-          />
-        </div>
-      </div>
         <div class="setting-group">
           <div class="personalization-header">
             <span class="personalization-title">个性化</span>
@@ -188,6 +178,36 @@ function close() {
             </div>
             <input type="file" ref="bgInput" accept="image/*" style="display:none" @change="onBgSelected" />
           </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-group half">
+            <label>Temperature</label>
+            <div class="slider-row">
+              <input type="range" v-model.number="settings.settings.temperature" min="0" max="1.5" step="0.1" />
+              <span class="slider-value">{{ settings.settings.temperature }}</span>
+            </div>
+          </div>
+          <div class="setting-group half">
+            <label>Top P</label>
+            <div class="slider-row">
+              <input type="range" v-model.number="settings.settings.top_p" min="0.01" max="1" step="0.01" />
+              <span class="slider-value">{{ settings.settings.top_p }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <label>最大输出 Token</label>
+          <input
+            type="number"
+            v-model.number="settings.settings.max_tokens"
+            class="input"
+            min="256"
+            max="131072"
+          />
+        </div>
+      </div>
         </div>
 
       <div class="settings-footer">
