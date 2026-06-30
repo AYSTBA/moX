@@ -107,8 +107,12 @@ onMounted(() => {
 
       <div v-if="message.attachments && message.attachments.length" class="attachments-block">
         <div v-for="(att, i) in message.attachments" :key="i" class="attachment-item">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-          <span>{{ att.name }}</span>
+          <img v-if="isImage(att)" :src="att.data" class="attachment-media" @click="lightboxSrc = att.data" />
+          <video v-else-if="isVideo(att)" :src="att.data" controls preload="metadata" class="attachment-media"></video>
+          <div v-else class="attachment-file">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            <span>{{ att.name }}</span>
+          </div>
         </div>
       </div>
 
