@@ -112,11 +112,11 @@ onMounted(() => {
     </div>
     <div class="message-body">
       <div v-if="hasThinking" class="thinking-block">
-        <button class="thinking-toggle" @click="showThinking = !showThinking">
+        <span class="thinking-toggle" @click="showThinking = !showThinking">
           <svg class="thinking-icon" :class="{open: showThinking}" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           <span>思考过程</span>
-          <span v-if="streaming" class="thinking-dots">...</span>
-        </button>
+          <span class="thinking-time">[{{ formatDuration(message.thinking_duration) }}]</span>
+        </span>
         <div v-if="showThinking" class="thinking-content">
           {{ message.reasoning_content }}
         </div>
@@ -256,18 +256,16 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--thinking-bg);
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-  padding: 4px 12px;
-  border-radius: 4px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 12px;
-  transition: all 0.2s;
+  padding: 2px 0;
+  transition: color 0.2s;
 }
 
 .thinking-toggle:hover {
-  border-color: var(--text-muted);
   color: var(--text-primary);
 }
 
