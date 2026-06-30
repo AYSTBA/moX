@@ -79,13 +79,6 @@ const timeDisplay = computed(() => {
 })
 const hasAnnotations = computed(() => {
 
-const timeDisplay = computed(() => {
-  const total = props.message.total_duration
-  const think = props.message.thinking_duration
-  if (total) return formatDuration(total) + (think ? ' (思考 ' + formatDuration(think) + ')' : '')
-  if (think) return formatDuration(think)
-  return '-'
-})
   return props.message.annotations && props.message.annotations.length > 0
 })
 
@@ -115,7 +108,7 @@ onMounted(() => {
         <span class="thinking-toggle" @click="showThinking = !showThinking">
           <svg class="thinking-icon" :class="{open: showThinking}" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           <span>思考过程</span>
-          <span class="thinking-time">[{{ formatDuration(message.thinking_duration) }}]</span>
+          <span class="thinking-time" v-if="message.thinking_duration">[{{ formatDuration(message.thinking_duration) }}]</span>
         </span>
         <div v-if="showThinking" class="thinking-content">
           {{ message.reasoning_content }}
@@ -174,9 +167,9 @@ onMounted(() => {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           </button>
           <div v-if="showInfo" class="info-tooltip">
-            <div class="tr">Token: {{ message.usage?.total_tokens || '-' }}</div>
-            <div class="tr">输入: {{ message.usage?.prompt_tokens || '-' }} / 输出: {{ message.usage?.completion_tokens || '-' }}</div>
-            <div class="tr">用时: {{ formatDuration(message.thinking_duration) || '-' }}</div>
+            <div class="tr">Token: {{ tokenDisplay }}</div>
+            <div class="tr">输出长度: {{ outputLen }} 字</div>
+            <div class="tr">用时: {{ timeDisplay }}</div>
           </div>
         </div>
       </div>
@@ -756,6 +749,7 @@ video.attachment-media {
   background: rgba(255,255,255,0.3);
 }
 </style>
+
 
 
 
