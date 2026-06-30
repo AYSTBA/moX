@@ -18,6 +18,7 @@ onMounted(async () => {
 </script>
 
 <template>
+  <div class="bg-blur" v-if="settings.settings.personalization_enabled && settings.settings.background_image"></div>
   <div class="app-layout" :class="settings.settings.theme">
     <Sidebar />
     <ChatView />
@@ -77,6 +78,8 @@ html, body, #app {
   height: 100vh;
   background: var(--bg-primary);
   color: var(--text-primary);
+  position: relative;
+  z-index: 1;
 }
 
 .dark {
@@ -117,20 +120,14 @@ html, body, #app {
   --scrollbar-thumb: #cccccc;
 }
 
-.personalized {
-  position: relative;
-  background: transparent !important;
-}
-
-.personalized::before {
-  content: '';
+/* Background image blur div (real element, not pseudo) */
+.bg-blur {
   position: fixed;
   inset: 0;
-  background: var(--bg-image, none) center/cover no-repeat fixed;
-  filter: blur(24px) brightness(0.55);
-  z-index: -1;
+  z-index: 0;
+  background: var(--bg-image) center/cover no-repeat fixed;
+  filter: blur(30px) brightness(0.45);
   pointer-events: none;
-  transition: background 0.5s ease;
 }
 
 /* Frosted glass - override component scoped backgrounds */
@@ -154,26 +151,40 @@ html, body, #app {
   -webkit-backdrop-filter: blur(12px) !important;
 }
 
-/* Accent color on toggle switches */
+.personalized .settings-overlay {
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Accent color spread across more UI elements */
 .personalized .toggle-switch.on {
   background: var(--toggle-on-bg, var(--text-primary)) !important;
   border-color: var(--toggle-on-bg, var(--text-primary)) !important;
 }
 
 .personalized .toggle-switch.on .toggle-knob {
-  left: 20px !important;
   background: var(--bg-primary) !important;
 }
 
-/* Accent color on primary buttons */
 .personalized .btn-send,
 .personalized .btn-primary {
   background: var(--accent, var(--text-primary)) !important;
+  color: var(--bg-primary) !important;
 }
 
-/* Assure consistent border radius and spacing */
-.personalized .settings-overlay {
-  background: rgba(0, 0, 0, 0.5) !important;
+.personalized .message.user .message-avatar {
+  background: var(--avatar-bg, var(--text-primary)) !important;
+}
+
+.personalized .input-container:focus-within {
+  border-color: var(--input-focus-border, var(--text-muted)) !important;
+}
+
+.personalized .thinking-content {
+  border-left-color: var(--thinking-accent, var(--border-color)) !important;
+}
+
+.personalized .message.user .message-body {
+  border-color: var(--message-user-border, var(--border-color)) !important;
 }
 
 .toast {
@@ -206,5 +217,3 @@ html, body, #app {
   transform: translateX(-50%) translateY(10px);
 }
 </style>
-
-
