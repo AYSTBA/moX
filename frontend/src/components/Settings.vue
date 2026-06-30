@@ -6,6 +6,7 @@ import {TestAPIKey} from '../../wailsjs/go/main/App'
 const settings = useSettingsStore()
 const testing = ref(false)
 const testResult = ref('')
+const bgInput = ref(null)
 
 function onBgSelected(e) {
   const file = e.target.files?.[0]
