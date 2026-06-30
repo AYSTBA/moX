@@ -133,24 +133,47 @@ html, body, #app {
   transition: background 0.5s ease;
 }
 
+/* Frosted glass - override component scoped backgrounds */
 .personalized .sidebar,
 .personalized .chat-header,
 .personalized .chat-input-area {
   background: rgba(26, 26, 26, 0.55) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
 }
 
 .personalized .message.user .message-body {
   background: rgba(42, 42, 42, 0.55) !important;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
 }
 
 .personalized .settings-panel {
   background: rgba(26, 26, 26, 0.7) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* Accent color on toggle switches */
+.personalized .toggle-switch.on {
+  background: var(--toggle-on-bg, var(--text-primary)) !important;
+  border-color: var(--toggle-on-bg, var(--text-primary)) !important;
+}
+
+.personalized .toggle-switch.on .toggle-knob {
+  left: 20px !important;
+  background: var(--bg-primary) !important;
+}
+
+/* Accent color on primary buttons */
+.personalized .btn-send,
+.personalized .btn-primary {
+  background: var(--accent, var(--text-primary)) !important;
+}
+
+/* Assure consistent border radius and spacing */
+.personalized .settings-overlay {
+  background: rgba(0, 0, 0, 0.5) !important;
 }
 
 .toast {
@@ -183,4 +206,5 @@ html, body, #app {
   transform: translateX(-50%) translateY(10px);
 }
 </style>
+
 

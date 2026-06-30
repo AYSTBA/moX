@@ -46,6 +46,34 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
+  function applyPersonalization() {
+    const s = settings.value
+    const root = document.documentElement
+
+    // Toggle personalized class
+    root.classList.toggle('personalized', s.personalization_enabled && (s.accent_color || s.background_image))
+
+    // Accent color - directly set the theme CSS variables
+    if (s.personalization_enabled && s.accent_color) {
+      root.style.setProperty('--accent', s.accent_color)
+      root.style.setProperty('--accent-hover', s.accent_color + 'cc')
+      // Update accent elements
+      root.style.setProperty('--toggle-on-bg', s.accent_color)
+    } else {
+      // Reset to theme defaults (remove inline style)
+      root.style.removeProperty('--accent')
+      root.style.removeProperty('--accent-hover')
+      root.style.removeProperty('--toggle-on-bg')
+    }
+
+    // Background image
+    if (s.personalization_enabled && s.background_image) {
+      root.style.setProperty('--bg-image', 'url(' + s.background_image + ')')
+    } else {
+      root.style.setProperty('--bg-image', 'none')
+    }
+  }
+
   function toggleTheme() {
     settings.value.theme = settings.value.theme === 'dark' ? 'light' : 'dark'
     applyTheme(settings.value.theme)
@@ -54,7 +82,3 @@ export const useSettingsStore = defineStore('settings', () => {
 
   return {settings, showSettings, load, save, toggleTheme}
 })
-
-
-
-
