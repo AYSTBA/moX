@@ -17,7 +17,7 @@ export const useSettingsStore = defineStore('settings', () => {
     external_search_enabled: false,
     time_awareness: false,
     personalization_enabled: false,
-    blur_intensity: 30,
+    blur_intensity: 50,
     background_image: '',
   })
 
@@ -66,4 +66,6 @@ export const useSettingsStore = defineStore('settings', () => {
 
   return {settings, showSettings, load, save, toggleTheme}
 })
+
+
 

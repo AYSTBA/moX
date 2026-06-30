@@ -128,7 +128,7 @@ html, body, #app {
   inset: 0;
   z-index: -1;
   background: var(--bg-image, none) center/cover no-repeat fixed;
-  filter: blur(var(--blur-intensity, 30px)) brightness(0.5);
+  filter: blur(var(--blur-intensity, 50px)) brightness(0.5);
   pointer-events: none;
 }
 
@@ -187,4 +187,5 @@ html, body, #app {
   transform: translateX(-50%) translateY(10px);
 }
 </style>
+
 
