@@ -82,6 +82,7 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 		ID:        uuid.New().String(),
 		Role:      "user",
 		Content:   userContent,
+		Attachments: toAttachmentItems(attachments),
 		Timestamp: time.Now().UnixMilli(),
 	}
 	session.Messages = append(session.Messages, userMsg)
@@ -386,4 +387,16 @@ func (a *App) TestAPIKey(apiKey string) string {
 		return "ok"
 	}
 	return fmt.Sprintf("API 返回错误: %d", resp.StatusCode)
+}
+
+func toAttachmentItems(attachments []FileAttachment) []AttachmentItem {
+	items := make([]AttachmentItem, 0, len(attachments))
+	for _, att := range attachments {
+		items = append(items, AttachmentItem{
+			Name: att.Name,
+			Type: att.MimeType,
+			Size: 0,
+		})
+	}
+	return items
 }

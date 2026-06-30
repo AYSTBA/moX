@@ -36,7 +36,14 @@ type Message struct {
 	ReasoningContent string       `json:"reasoning_content,omitempty"`
 	ToolCalls        []ToolCall   `json:"tool_calls,omitempty"`
 	Annotations      []Annotation `json:"annotations,omitempty"`
+	Attachments      []AttachmentItem `json:"attachments,omitempty"`
 	Timestamp        int64        `json:"timestamp"`
+}
+
+type AttachmentItem struct {
+	Name string `json:"name"`
+	Type string `json:"type,omitempty"`
+	Size int64  `json:"size,omitempty"`
 }
 
 type ToolCall struct {
