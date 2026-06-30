@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import {onMounted} from 'vue'
 import {useSettingsStore} from './stores/settings'
 import {useChatStore} from './stores/chat'
@@ -117,6 +117,42 @@ html, body, #app {
   --scrollbar-thumb: #cccccc;
 }
 
+.personalized {
+  position: relative;
+  background: transparent !important;
+}
+
+.personalized::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: var(--bg-image, none) center/cover no-repeat fixed;
+  filter: blur(24px) brightness(0.55);
+  z-index: -1;
+  pointer-events: none;
+  transition: background 0.5s ease;
+}
+
+.personalized .sidebar,
+.personalized .chat-header,
+.personalized .chat-input-area {
+  background: rgba(26, 26, 26, 0.55) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.personalized .message.user .message-body {
+  background: rgba(42, 42, 42, 0.55) !important;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.personalized .settings-panel {
+  background: rgba(26, 26, 26, 0.7) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
 .toast {
   position: fixed;
   bottom: 80px;
@@ -147,3 +183,4 @@ html, body, #app {
   transform: translateX(-50%) translateY(10px);
 }
 </style>
+

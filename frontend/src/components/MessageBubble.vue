@@ -16,6 +16,11 @@ function isImage(att) {
   return att.type && att.type.startsWith('image/')
 }
 
+function formatDuration(ms) {
+  if (!ms) return ''
+  return (ms / 1000).toFixed(1) + 's'
+}
+
 function isVideo(att) {
   return att.type && att.type.startsWith('video/')
 }
@@ -636,5 +641,6 @@ video.attachment-media {
   background: rgba(255,255,255,0.3);
 }
 </style>
+
 
 

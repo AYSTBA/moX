@@ -1,4 +1,4 @@
-import {defineStore} from 'pinia'
+﻿import {defineStore} from 'pinia'
 import {ref} from 'vue'
 import {GetSettings, SaveSettings} from '../../wailsjs/go/main/App'
 
@@ -16,6 +16,10 @@ export const useSettingsStore = defineStore('settings', () => {
     external_search_api_key: '',
     external_search_enabled: false,
     time_awareness: false,
+    personalization_enabled: false,
+    accent_color: '',
+    bg_color: '',
+    background_image: '',
   })
 
   const showSettings = ref(false)
@@ -24,10 +28,12 @@ export const useSettingsStore = defineStore('settings', () => {
     const s = await GetSettings()
     if (s) settings.value = s
     applyTheme(settings.value.theme)
+    applyPersonalization()
   }
 
   async function save() {
     await SaveSettings(settings.value)
+    applyPersonalization()
   }
 
   function applyTheme(theme) {
@@ -48,3 +54,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
   return {settings, showSettings, load, save, toggleTheme}
 })
+
+
+
+

@@ -19,6 +19,10 @@ type Settings struct {
 	ExternalSearchAPIKey string `json:"external_search_api_key"`
 	ExternalSearchEnabled bool `json:"external_search_enabled"`
 	TimeAwareness bool `json:"time_awareness"`
+	PersonalizationEnabled bool   `json:"personalization_enabled"`
+	AccentColor            string `json:"accent_color"`
+	BgColor                string `json:"bg_color"`
+	BackgroundImage        string `json:"background_image"`
 }
 
 type Session struct {

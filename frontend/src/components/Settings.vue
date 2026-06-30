@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import {ref} from 'vue'
 import {useSettingsStore} from '../stores/settings'
 import {TestAPIKey} from '../../wailsjs/go/main/App'
@@ -147,6 +147,48 @@ function close() {
           />
         </div>
       </div>
+        <div class="setting-group">
+          <div class="personalization-header">
+            <span class="personalization-title">个性化</span>
+            <button
+              class="toggle-switch"
+              :class="{on: settings.settings.personalization_enabled}"
+              @click="settings.settings.personalization_enabled = !settings.settings.personalization_enabled; settings.save()"
+            >
+              <span class="toggle-knob"></span>
+            </button>
+          </div>
+
+          <div v-if="settings.settings.personalization_enabled" class="personalization-body">
+            <label>配色方案</label>
+            <div class="color-options">
+              <div
+                v-for="c in colorSchemes"
+                :key="c.id"
+                class="color-option"
+                :class="{active: settings.settings.accent_color === c.value}"
+                @click="settings.settings.accent_color = c.value; settings.save()"
+              >
+                <div class="color-swatch" :style="{background: c.color}"></div>
+                <span>{{ c.name }}</span>
+              </div>
+            </div>
+
+            <label>背景图片</label>
+            <div class="bg-image-row">
+              <button class="btn-upload" @click="bgInput.click()">
+                {{ settings.settings.background_image ? &quot;更换图片&quot; : &quot;选择图片&quot; }}
+              </button>
+              <button v-if="settings.settings.background_image" class="btn-clear" @click="settings.settings.background_image = ''; settings.save()">
+                清除
+              </button>
+            </div>
+            <div v-if="settings.settings.background_image" class="bg-preview">
+              <img :src="settings.settings.background_image" class="bg-thumb" />
+            </div>
+            <input type="file" ref="bgInput" accept="image/*" style="display:none" @change="onBgSelected" />
+          </div>
+        </div>
 
       <div class="settings-footer">
         <button class="btn-primary" @click="close">保存</button>
@@ -423,5 +465,110 @@ function close() {
 
 .btn-primary:hover {
   opacity: 0.85;
+}
+.section-title {
+  font-family: 'Smiley Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.personalization-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.personalization-title {
+  font-family: 'Smiley Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.personalization-body {
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.personalization-body label {
+  display: block;
+  font-size: 12px;
+  margin-top: 12px;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+}
+
+.personalization-body label:first-child {
+  margin-top: 0;
+}
+
+.color-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.color-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.color-option:hover {
+  border-color: var(--text-muted);
+}
+
+.color-option.active {
+  border-color: var(--text-primary);
+}
+
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.bg-image-row {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-upload, .btn-clear {
+  padding: 8px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+
+.btn-upload:hover, .btn-clear:hover {
+  background: var(--bg-hover);
+}
+
+.bg-preview {
+  margin-top: 8px;
+}
+
+.bg-thumb {
+  max-width: 100%;
+  max-height: 120px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
 }
 </style>

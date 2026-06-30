@@ -79,6 +79,7 @@ function handleSend(content, attachments) {
               reasoning_content: chat.streamingThinking,
               tool_calls: chat.streamingToolCalls,
               annotations: chat.streamingAnnotations,
+              thinking_duration: chat.thinkingDuration,
               timestamp: Date.now()
             }"
             :streaming="true"

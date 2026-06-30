@@ -1,4 +1,4 @@
-import {defineStore} from 'pinia'
+﻿import {defineStore} from 'pinia'
 import {ref, computed} from 'vue'
 import {
   GetSessions,
@@ -19,6 +19,8 @@ export const useChatStore = defineStore('chat', () => {
   const streamingThinking = ref('')
   const streamingToolCalls = ref([])
   const streamingAnnotations = ref([])
+const thinkingStartTime = ref(0)
+const thinkingDuration = ref(0)
   const models = ref([])
   const toastMessage = ref('')
   const showToast = ref(false)
@@ -110,10 +112,13 @@ export const useChatStore = defineStore('chat', () => {
   function stop() {
     StopGeneration()
     isStreaming.value = false
+    thinkingStartTime.value = 0
+    thinkingDuration.value = 0
   }
 
   function setupEvents() {
     EventsOn('chat:userMessage', (msg) => {
+      msg.thinking_duration = thinkingDuration.value
       const s = sessions.value.find(s => s.key === activeSessionKey.value)
       if (s) s.messages.push(msg)
     })
@@ -123,6 +128,10 @@ export const useChatStore = defineStore('chat', () => {
     })
 
     EventsOn('chat:thinking', (content) => {
+      if (thinkingStartTime.value === 0) {
+        thinkingStartTime.value = Date.now()
+      }
+      thinkingDuration.value = Date.now() - thinkingStartTime.value
       streamingThinking.value = content
     })
 
@@ -141,6 +150,7 @@ export const useChatStore = defineStore('chat', () => {
       streamingThinking.value = ''
       streamingToolCalls.value = []
       streamingAnnotations.value = []
+      msg.thinking_duration = thinkingDuration.value
       const s = sessions.value.find(s => s.key === activeSessionKey.value)
       if (s) s.messages.push(msg)
     })
@@ -151,6 +161,8 @@ export const useChatStore = defineStore('chat', () => {
       streamingContent.value = ''
       streamingThinking.value = ''
       streamingAnnotations.value = []
+      thinkingStartTime.value = 0
+      thinkingDuration.value = 0
       const s = sessions.value.find(s => s.key === activeSessionKey.value)
       if (s) {
         s.messages.push({
@@ -187,6 +199,7 @@ export const useChatStore = defineStore('chat', () => {
     streamingThinking,
     streamingToolCalls,
     streamingAnnotations,
+    thinkingDuration,
     models,
     toastMessage,
     showToast,
@@ -202,3 +215,6 @@ export const useChatStore = defineStore('chat', () => {
     setupEvents,
   }
 })
+
+
+
