@@ -303,6 +303,13 @@ func (a *App) directChat(ctx context.Context, apiKey, model string, thinking boo
 			assistantMsg.ReasoningContent = reasoningBuilder.String()
 			assistantMsg.ToolCalls = toolCallsBuilder
 			assistantMsg.Annotations = annotationsBuilder
+			if event.Usage != nil {
+				assistantMsg.Usage = &Usage{
+					PromptTokens:     event.Usage.PromptTokens,
+					CompletionTokens: event.Usage.CompletionTokens,
+					TotalTokens:      event.Usage.TotalTokens,
+				}
+			}
 			session.Messages = append(session.Messages, assistantMsg)
 			SaveSession(session)
 			runtime.EventsEmit(a.ctx, "chat:done", assistantMsg)

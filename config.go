@@ -40,6 +40,7 @@ type Message struct {
 	ToolCalls        []ToolCall   `json:"tool_calls,omitempty"`
 	Annotations      []Annotation `json:"annotations,omitempty"`
 	Attachments      []AttachmentItem `json:"attachments,omitempty"`
+	Usage            *Usage           `json:"usage,omitempty"`
 	Timestamp        int64        `json:"timestamp"`
 }
 

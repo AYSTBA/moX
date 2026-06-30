@@ -25,6 +25,15 @@ function isVideo(att) {
   return att.type && att.type.startsWith('video/')
 }
 
+const copied = ref(false)
+const showInfo = ref(false)
+
+function copyContent() {
+  navigator.clipboard.writeText(props.message.content)
+  copied.value = true
+  setTimeout(() => { copied.value = false }, 2000)
+}
+
 marked.setOptions({
   highlight: function(code, lang) {
     if (lang && hljs.getLanguage(lang)) {
@@ -125,6 +134,26 @@ onMounted(() => {
 
       <div v-if="streaming && !message.content && !hasThinking" class="typing-indicator">
         <span></span><span></span><span></span>
+      </div>
+      <div v-if="message.role === 'assistant' && message.content" class="message-footer">
+        <button class="footer-btn copy-btn" @click="copyContent">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span class="copy-label">{{ copied ? '已复制' : '复制' }}</span>
+        </button>
+
+        <div class="info-wrapper">
+          <button class="footer-btn info-btn"
+            @mouseenter="showInfo = true"
+            @mouseleave="showInfo = false"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </button>
+          <div v-if="showInfo" class="info-tooltip">
+            <div class="tr">Token: {{ message.usage?.total_tokens || '-' }}</div>
+            <div class="tr">输入: {{ message.usage?.prompt_tokens || '-' }} / 输出: {{ message.usage?.completion_tokens || '-' }}</div>
+            <div class="tr">用时: {{ formatDuration(message.thinking_duration) || '-' }}</div>
+          </div>
+        </div>
       </div>
     </div>
   <div v-if="lightboxSrc" class="lightbox-overlay" @click="lightboxSrc = null">
@@ -598,6 +627,69 @@ video.attachment-media {
   border: 1px solid var(--border-color);
 }
 
+.message-footer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+.message-footer:hover {
+  opacity: 1;
+}
+
+.footer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s;
+}
+
+.footer-btn:hover {
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+  background: var(--bg-tertiary);
+}
+
+.copy-label {
+  font-size: 11px;
+}
+
+.info-wrapper {
+  position: relative;
+}
+
+.info-tooltip {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 100;
+}
+
+.tr {
+  margin-bottom: 2px;
+}
+
+.tr:last-child {
+  margin-bottom: 0;
+}
 .lightbox-overlay {
   position: fixed;
   top: 0;
