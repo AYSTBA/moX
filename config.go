@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"encoding/json"
@@ -147,3 +147,4 @@ func DeleteSession(key string) error {
 	}
 	return os.Remove(path)
 }
+

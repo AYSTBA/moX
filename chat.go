@@ -139,6 +139,20 @@ func SendChatMessage(ctx context.Context, apiKey string, req ChatRequest, events
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Buffer(make([]byte, 1024*1024), 1024*1024)
 
+	// Heartbeat for long responses
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				events <- StreamEvent{Type: "heartbeat"}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
 	for scanner.Scan() {
 		select {
 		case <-ctx.Done():
@@ -337,3 +351,4 @@ func ExternalSearch(ctx context.Context, apiKey string, query string) ([]TavilyR
 	}
 	return result.Results, nil
 }
+

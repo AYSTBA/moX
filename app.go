@@ -2,9 +2,12 @@
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,6 +17,7 @@ import (
 type App struct {
 	ctx        context.Context
 	cancelFunc context.CancelFunc
+	mu         sync.Mutex
 }
 
 func NewApp() *App {
@@ -144,7 +148,12 @@ func (a *App) SendMessage(sessionKey string, userContent string, model string, t
 	}
 
 	ctx, cancel := context.WithCancel(a.ctx)
+	a.mu.Lock()
+	if a.cancelFunc != nil {
+		a.cancelFunc()
+	}
 	a.cancelFunc = cancel
+	a.mu.Unlock()
 
 	if settings.ExternalSearchEnabled && settings.ExternalSearchAPIKey != "" {
 		a.agentLoop(ctx, apiKey, model, thinking, settings, apiMessages, session)
@@ -159,23 +168,32 @@ func (a *App) agentLoop(ctx context.Context, apiKey, model string, thinking bool
 	lastUserMsg := ""
 	for i := len(history) - 1; i >= 0; i-- {
 		if history[i].Role == "user" {
-			if s, ok := history[i].Content.(string); ok {
-				lastUserMsg = s
+			switch c := history[i].Content.(type) {
+			case string:
+				lastUserMsg = c
+			case []ContentPart:
+				for _, part := range c {
+					if part.Type == "text" {
+						lastUserMsg = part.Text
+						break
+					}
+				}
 			}
 			break
 		}
 	}
 
 	planMessages := []ChatMessage{
-		{Role: "system", Content: `你是规划助手。判断用户问题是否需要联网搜索。
+		{Role: "system", Content: `你是一个规划助手。判断用户问题并返回JSON格式结果。
 
-规则：
-- 需要实时信息、最新资讯、特定URL/仓库/文件内容、当前事件 → 输出 SEARCH:关键词
-- 问题复杂需要深入推理 → 输出 THINK
-- 可以直接回答 → 输出 OK
+格式: {"action":"search"|"think"|"direct","query":"搜索关键词"}
 
-只输出三个字母之一加冒号和关键词，例如：SEARCH:github AYSTBA仓库
-不要解释，不要输出其他任何内容。`},
+规则:
+- "search": 需要实时信息、最新资讯、特定URL/仓库/文件内容、当前事件
+- "think": 问题复杂需要深入推理
+- "direct": 可以直接回答
+
+只输出JSON，不要解释。`},
 		{Role: "user", Content: lastUserMsg},
 	}
 
@@ -194,30 +212,44 @@ func (a *App) agentLoop(ctx context.Context, apiKey, model string, thinking bool
 		return
 	}
 
-	planText := strings.TrimSpace(strings.ToUpper(planResp))
 	runtime.EventsEmit(a.ctx, "chat:toast", "Agent: "+planResp)
 
-	var searchQuery string
-	needThink := false
+	// Strip markdown code fences
+	planResp = strings.TrimSpace(planResp)
+	planResp = strings.TrimPrefix(planResp, "```json")
+	planResp = strings.TrimPrefix(planResp, "```")
+	planResp = strings.TrimSuffix(planResp, "```")
+	planResp = strings.TrimSpace(planResp)
 
-	if strings.HasPrefix(planText, "SEARCH:") {
-		searchQuery = strings.TrimSpace(strings.TrimPrefix(planResp, "SEARCH:"))
-		searchQuery = strings.TrimSpace(strings.TrimPrefix(searchQuery, "search:"))
-	} else if strings.HasPrefix(planText, "THINK") {
-		needThink = true
+	type planResponse struct {
+		Action string `json:"action"`
+		Query  string `json:"query"`
+	}
+	var plan planResponse
+	if err := json.Unmarshal([]byte(planResp), &plan); err != nil {
+		// Non-JSON response means LLM misunderstood — fallback to direct
+		runtime.EventsEmit(a.ctx, "chat:toast", "Agent 回复格式异常，跳过搜索")
+		a.directChat(ctx, apiKey, model, thinking, settings, history, session, nil)
+		return
+	}
+
+	if plan.Action == "" {
+		runtime.EventsEmit(a.ctx, "chat:toast", "Agent 响应为空，跳过搜索")
+		a.directChat(ctx, apiKey, model, thinking, settings, history, session, nil)
+		return
 	}
 
 	var searchResults []TavilyResult
-	if searchQuery != "" {
+	if plan.Action == "search" && plan.Query != "" {
 		runtime.EventsEmit(a.ctx, "chat:status", "searching")
-		searchResults, err = ExternalSearch(ctx, settings.ExternalSearchAPIKey, searchQuery)
+		searchResults, err = ExternalSearch(ctx, settings.ExternalSearchAPIKey, plan.Query)
 		if err != nil {
 			runtime.EventsEmit(a.ctx, "chat:toast", "搜索失败: "+err.Error())
 		}
 		runtime.EventsEmit(a.ctx, "chat:status", "")
 	}
 
-	a.directChat(ctx, apiKey, model, thinking || needThink, settings, history, session, searchResults)
+	a.directChat(ctx, apiKey, model, thinking || plan.Action == "think", settings, history, session, searchResults)
 }
 
 func (a *App) directChat(ctx context.Context, apiKey, model string, thinking bool, settings *Settings, history []ChatMessage, session *Session, searchResults []TavilyResult) {
@@ -324,22 +356,15 @@ func (a *App) directChat(ctx context.Context, apiKey, model string, thinking boo
 }
 
 func cleanFunctionCalls(content string) string {
-	for {
-		start := strings.Index(content, `{"name"`)
-		if start == -1 {
-			break
-		}
-		end := strings.Index(content[start:], "}")
-		if end == -1 {
-			break
-		}
-		content = content[:start] + content[start+end+1:]
-	}
+	re := regexp.MustCompile(`\{[^{}]*"name"[^{}]*\}`)
+	content = re.ReplaceAllString(content, "")
 	content = strings.TrimSpace(content)
 	return content
 }
 
 func (a *App) StopGeneration() {
+	a.mu.Lock()
+	defer a.mu.Unlock()
 	if a.cancelFunc != nil {
 		a.cancelFunc()
 		a.cancelFunc = nil
