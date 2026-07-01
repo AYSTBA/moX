@@ -1,6 +1,7 @@
 ﻿<script setup>
 import {computed, ref, onMounted} from 'vue'
 import {marked} from 'marked'
+import {markedHighlight} from 'marked-highlight'
 import hljs from 'highlight.js'
 
 const props = defineProps({
@@ -34,15 +35,19 @@ function copyContent() {
   setTimeout(() => { copied.value = false }, 2000)
 }
 
-marked.setOptions({
-  highlight: function(code, lang) {
-    if (lang && hljs.getLanguage(lang)) {
-      try {
-        return hljs.highlight(code, {language: lang}).value
-      } catch {}
+marked.use(markedHighlight({
+  langPrefix: 'hljs language-',
+  highlight(code, lang) {
+    const language = lang && hljs.getLanguage(lang) ? lang : 'plaintext'
+    try {
+      return hljs.highlight(code, {language}).value
+    } catch {
+      return code
     }
-    return code
   },
+}))
+
+marked.setOptions({
   breaks: true,
   gfm: true,
 })
