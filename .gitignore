@@ -5,6 +5,8 @@ build/bin/
 *.dll
 *.so
 *.dylib
+mox
+mox.exe
 
 # Test binary
 *.test
