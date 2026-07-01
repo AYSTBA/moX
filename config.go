@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"sort"
 )
 
 type Settings struct {
@@ -129,6 +130,10 @@ func LoadSessions() []Session {
 			sessions = append(sessions, s)
 		}
 	}
+	// 按 UpdatedAt 倒序排列，保证最近活跃的会话排在最前
+	sort.Slice(sessions, func(i, j int) bool {
+		return sessions[i].UpdatedAt > sessions[j].UpdatedAt
+	})
 	return sessions
 }
 

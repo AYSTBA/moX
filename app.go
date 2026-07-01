@@ -356,7 +356,8 @@ func (a *App) directChat(ctx context.Context, apiKey, model string, thinking boo
 }
 
 func cleanFunctionCalls(content string) string {
-	re := regexp.MustCompile(`\{[^{}]*"name"[^{}]*\}`)
+	// 仅匹配工具调用 JSON 模式 {"name":"...","arguments":"..."}，避免误删含 name 字段的普通 JSON
+	re := regexp.MustCompile(`\{\s*"name"\s*:\s*"[^"]+"\s*,\s*"arguments"\s*:\s*"[^"]*"\s*\}`)
 	content = re.ReplaceAllString(content, "")
 	content = strings.TrimSpace(content)
 	return content
@@ -382,6 +383,7 @@ func (a *App) GetModels() []map[string]string {
 }
 
 func (a *App) generateTitle(apiKey string, session *Session) {
+	// 仅用调用时刻的消息快照构建生成标题的 prompt
 	apiMessages := make([]ChatMessage, 0, len(session.Messages))
 	for _, m := range session.Messages {
 		apiMessages = append(apiMessages, ChatMessage{
@@ -395,12 +397,20 @@ func (a *App) generateTitle(apiKey string, session *Session) {
 		return
 	}
 
-	session.Label = title
-	SaveSession(session)
-	runtime.EventsEmit(a.ctx, "chat:titleUpdated", map[string]string{
-		"key":   session.Key,
-		"label": title,
-	})
+	// 从磁盘重新加载会话，仅更新 Label 字段后保存，避免覆盖此期间新增的消息
+	sessions := LoadSessions()
+	for i := range sessions {
+		if sessions[i].Key == session.Key {
+			sessions[i].Label = title
+			if err := SaveSession(&sessions[i]); err == nil {
+				runtime.EventsEmit(a.ctx, "chat:titleUpdated", map[string]string{
+					"key":   session.Key,
+					"label": title,
+				})
+			}
+			return
+		}
+	}
 }
 
 func (a *App) TestAPIKey(apiKey string) string {
