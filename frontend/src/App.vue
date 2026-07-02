@@ -259,6 +259,11 @@ function toggleSidebar() {
           </select>
         </div>
         <div class="input-wrap">
+          <button class="btn-attach" @click="handleAttach" title="上传附件">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+            </svg>
+          </button>
           <textarea
             v-model="input"
             @keydown.enter.exact="handleSend"
@@ -287,11 +292,14 @@ function toggleSidebar() {
           </button>
         </div>
         <div class="dialog-body">
+                    <div class="form-group">
+              <label>MiMo API Key</label>
+              <input type="password" v-model="apiKey" placeholder="输入 API Key" />
+            </div>
           <div class="form-group">
-            <label>MiMo API Key</label>
-            <input type="password" v-model="apiKey" placeholder="输入 API Key" />
-            <p class="form-hint">API Key 存储在浏览器本地，不会上传到服务器</p>
-          </div>
+              <label>系统提示词</label>
+              <textarea class="prompt-textarea" v-model="systemPrompt" placeholder="设置系统提示词..." rows="4"></textarea>
+            </div>
         </div>
         <div class="dialog-footer">
           <button class="btn-cancel" @click="showSettings = false">取消</button>
@@ -301,5 +309,6 @@ function toggleSidebar() {
     </div>
   </div>
 </template>
+
 
 
