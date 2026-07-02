@@ -1,4 +1,4 @@
-﻿# Binaries
+# Binaries
 *.exe
 *.dll
 *.so
@@ -29,14 +29,33 @@ Thumbs.db
 .env
 *.local
 
-# Build artifact at root
+# Build artifacts
 mox
-backend/mox-server.exe
-
-# Build outputs
 backend/mox-server.exe
 *.msi
 *.zip
 
-# Sidecar binaries
+# Sidecar binaries (Tauri)
 frontend/src-tauri/binaries/
+
+# Tauri generated schemas (auto-regenerated on build)
+frontend/src-tauri/gen/
+
+# User config / settings data (stored by Go backend)
+settings.json
+.mox/
+
+# Conflict / backup files
+*????*
+*conflict copy*
+*.bak
+*.backup
+
+# Logs
+*.log
+
+# Vite cache
+frontend/node_modules/.vite/
+
+# Package-lock md5 hash (auto-generated)
+frontend/package.json.md5
