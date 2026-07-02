@@ -41,6 +41,22 @@ export function deleteConversation(id) {
   }
 }
 
+// === Settings API ===
+
+export async function getSettings() {
+  const resp = await fetch(API + "/api/settings")
+  if (!resp.ok) return {}
+  return resp.json()
+}
+
+export async function saveSettings(apiKey, systemPrompt) {
+  await fetch(API + "/api/settings", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({api_key: apiKey, system_prompt: systemPrompt}),
+  })
+}
+
 // === API calls ===
 
 export async function chat(messages, model, onToken) {
@@ -79,3 +95,4 @@ export async function getModels() {
   const resp = await fetch(API + "/v1/models")
   return (await resp.json()).data || []
 }
+

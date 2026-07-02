@@ -1,11 +1,12 @@
 ﻿<script setup>
 import {ref, onMounted, watch, nextTick} from "vue"
 import {useChatStore} from "./stores/chat.js"
-import {getKey, setKey} from "./api.js"
+import {getKey, setKey, getSettings, saveSettings} from "./api.js"
 
 const chat = useChatStore()
 const input = ref("")
 const apiKey = ref(getKey())
+const systemPrompt = ref("你是mimo")
 const showSettings = ref(false)
 const streaming = ref(false)
 const sidebarOpen = ref(true)
@@ -96,10 +97,11 @@ function deleteChat(id, e) {
   chat.removeConversation(id)
 }
 
-function saveKey() {
-  setKey(apiKey.value)
-  showSettings.value = false
-}
+async function saveKey() {
+    setKey(apiKey.value)
+    try { await saveSettings(apiKey.value, systemPrompt.value) } catch {}
+    showSettings.value = false
+  }
 
 function startEditTitle(conv, e) {
   e.stopPropagation()
@@ -107,7 +109,17 @@ function startEditTitle(conv, e) {
   editTitleValue.value = conv.title
 }
 
-function saveTitle(conv) {
+async function loadSettings() {
+    try {
+      const s = await getSettings()
+      if (s.system_prompt) systemPrompt.value = s.system_prompt
+      if (s.api_key) { apiKey.value = s.api_key; setKey(s.api_key) }
+    } catch {}
+  }
+
+  function handleAttach() {}
+
+  function saveTitle(conv) {
   conv.title = editTitleValue.value || "新对话"
   conv.updatedAt = Date.now()
   chat.persistConversations()
@@ -221,10 +233,10 @@ function toggleSidebar() {
         <!-- Messages -->
         <div v-for="(msg, i) in chat.currentMessages" :key="i" class="message" :class="msg.role">
           <div class="avatar" :class="msg.role">
-            <svg v-if="msg.role === 'user'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg v-if="msg.role === 'user'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
             </svg>
-            <svg v-else width="16" height="16" viewBox="0 0 48 48" fill="none">
+            <svg v-else width="22" height="22" viewBox="0 0 48 48" fill="none">
               <rect x="6" y="6" width="36" height="36" rx="8" fill="#e8e8e8"/>
               <path d="M16 20h16M16 28h12" stroke="#111" stroke-width="3" stroke-linecap="round"/>
               <circle cx="34" cy="32" r="4" fill="#111"/>
@@ -282,11 +294,12 @@ function toggleSidebar() {
           </div>
         </div>
         <div class="dialog-footer">
-          <button class="btn-cancel" @click="saveKey">取消</button>
+          <button class="btn-cancel" @click="showSettings = false">取消</button>
           <button class="btn-primary" @click="saveKey">保存</button>
         </div>
       </div>
     </div>
   </div>
 </template>
+
 
