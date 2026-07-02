@@ -1,15 +1,9 @@
-# Binaries
-build/bin/
+﻿# Binaries
 *.exe
-*.exe~
 *.dll
 *.so
 *.dylib
-
-# Test binary
 *.test
-
-# Output
 *.out
 
 # Go
@@ -19,27 +13,22 @@ build/bin/
 frontend/node_modules/
 frontend/dist/
 
+# Tauri
+frontend/src-tauri/target/
+
 # IDE
 .idea/
 .vscode/
 *.swp
-*.swo
-*~
 
 # OS
 .DS_Store
 Thumbs.db
-Desktop.ini
 
-# Wails
-frontend/wailsjs/
-
-# Env / Secrets
+# Env
 .env
-.env.*
 *.local
 
-# Logs
-*.log
-
+# Build artifact at root
 mox
+backend/mox-server.exe
