@@ -32,3 +32,8 @@ Thumbs.db
 # Build artifact at root
 mox
 backend/mox-server.exe
+
+# Build outputs
+backend/mox-server.exe
+*.msi
+*.zip
