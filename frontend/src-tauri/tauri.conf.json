@@ -1,7 +1,7 @@
-﻿{
+{
   "productName": "MOX",
   "version": "1.0.0",
-  "identifier": "com.mox.app",
+  "identifier": "com.mox.desktop",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
