@@ -37,3 +37,6 @@ backend/mox-server.exe
 backend/mox-server.exe
 *.msi
 *.zip
+
+# Sidecar binaries
+frontend/src-tauri/binaries/

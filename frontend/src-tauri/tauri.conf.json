@@ -1,4 +1,4 @@
-{
+﻿{
   "productName": "MOX",
   "version": "1.0.0",
   "identifier": "com.mox.app",
@@ -6,6 +6,9 @@
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
     "beforeBuildCommand": "npm run build"
+  },
+  "bundle": {
+    "externalBin": ["binaries/mox-server"]
   },
   "app": {
     "windows": [
