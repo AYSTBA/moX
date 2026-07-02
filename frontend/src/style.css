@@ -336,6 +336,7 @@ html, body, #app {
 }
 
 .message.assistant .bubble {
+  max-width: 65%;
   padding: 4px 0;
 }
 
@@ -477,6 +478,13 @@ pre code {
 
 .input-wrap textarea:disabled {
   opacity: 0.5;
+}
+
+.input-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .btn-send {
