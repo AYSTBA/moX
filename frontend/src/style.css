@@ -359,6 +359,67 @@ html, body, #app {
 .bubble-content p:last-child {
   margin-bottom: 0;
 }
+.bubble-content ul, .bubble-content ol {
+  margin: 8px 0;
+  padding-left: 24px;
+  line-height: 1.7;
+}
+.bubble-content li {
+  margin-bottom: 4px;
+}
+.bubble-content blockquote {
+  border-left: 3px solid #555;
+  margin: 12px 0;
+  padding: 4px 16px;
+  color: #999;
+  background: rgba(255,255,255,0.03);
+  border-radius: 0 4px 4px 0;
+}
+.bubble-content table {
+  border-collapse: collapse;
+  margin: 12px 0;
+  width: 100%;
+  font-size: 13px;
+}
+.bubble-content th, .bubble-content td {
+  border: 1px solid #333;
+  padding: 8px 12px;
+  text-align: left;
+}
+.bubble-content th {
+  background: #1a1a1a;
+  font-weight: 600;
+}
+.bubble-content tr:nth-child(even) {
+  background: rgba(255,255,255,0.02);
+}
+.bubble-content a {
+  color: #7ab7ff;
+  text-decoration: none;
+}
+.bubble-content a:hover {
+  text-decoration: underline;
+}
+.bubble-content h1, .bubble-content h2, .bubble-content h3,
+.bubble-content h4, .bubble-content h5, .bubble-content h6 {
+  margin: 16px 0 8px;
+  color: #e8e8e8;
+  line-height: 1.4;
+}
+.bubble-content h1 { font-size: 20px; }
+.bubble-content h2 { font-size: 18px; }
+.bubble-content h3 { font-size: 16px; }
+.bubble-content h4 { font-size: 15px; }
+.bubble-content hr {
+  border: none;
+  border-top: 1px solid #333;
+  margin: 16px 0;
+}
+.bubble-content img {
+  max-width: 100%;
+  border-radius: 6px;
+  margin: 8px 0;
+}
 
 /* ===== Code Blocks ===== */
 
@@ -680,5 +741,6 @@ pre code {
 .btn-primary:hover {
   opacity: 0.85;
 }
+
 
 

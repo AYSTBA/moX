@@ -2,6 +2,27 @@
 import {ref, onMounted, watch, nextTick} from "vue"
 import {useChatStore} from "./stores/chat.js"
 import {getKey, setKey, getSettings, saveSettings} from "./api.js"
+import { marked } from "marked"
+import hljs from "highlight.js"
+import { markedHighlight } from "marked-highlight"
+import "highlight.js/styles/github-dark.css"
+
+marked.use(markedHighlight({
+  langPrefix: "hljs language-",
+  highlight(code, lang) {
+    if (lang && hljs.getLanguage(lang)) {
+      return hljs.highlight(code, { language: lang }).value
+    }
+    return hljs.highlightAuto(code).value
+  }
+}))
+
+marked.setOptions({ breaks: true, gfm: true })
+
+function renderMarkdown(content) {
+  if (!content) return ""
+  return marked.parse(content)
+}
 
 const chat = useChatStore()
 const input = ref("")
@@ -246,7 +267,7 @@ function toggleSidebar() {
             <div v-if="msg.streaming && !msg.content" class="loading-dots">
               <span></span><span></span><span></span>
             </div>
-            <div v-else class="bubble-content" v-text="msg.content"></div>
+            <div v-else class="bubble-content" v-html="renderMarkdown(msg.content)"></div>
           </div>
         </div>
       </div>
